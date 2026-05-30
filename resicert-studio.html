@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ResiCert Studio — discipline-based compliance decipher</title>
+<style>
+:root{
+  --bg:#0f1419;--panel:#161c24;--panel-2:#1d2530;--panel-3:#222c38;--line:#2a3440;--ink:#e7edf3;--muted:#9fb0c0;
+  --accent:#2f9e5e;--accent-2:#36b3ff;--warn:#e0a32e;--fail:#e0563f;--pass:#2f9e5e;--info:#6b7d8f;
+  --radius:10px;--shadow:0 6px 24px rgba(0,0,0,.28);
+}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.muted{color:var(--muted)}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+/* header */
+.topbar{padding:14px 22px;background:linear-gradient(180deg,#18202b,#131922);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+.topline{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}.logo{font-size:28px}
+.topbar h1{font-size:18px;margin:0}.tagline{margin:0;font-size:12px;color:var(--muted)}
+.topbar-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+select,input,button{font:inherit;color:var(--ink);background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+select{max-width:240px}
+button.ghost{cursor:pointer}button.ghost:hover{filter:brightness(1.1)}
+/* summary strip */
+.summary{display:flex;gap:10px;align-items:stretch;flex-wrap:wrap;margin-top:12px}
+.ov-card{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:8px 14px;display:flex;flex-direction:column;justify-content:center;min-width:150px}
+.ov-card .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.ov-card .v{font-size:18px;font-weight:700}
+.chips{display:flex;gap:8px;flex-wrap:wrap;flex:1}
+.chip{cursor:pointer;border:1px solid var(--line);border-radius:10px;padding:7px 12px;background:var(--panel-2);display:flex;align-items:center;gap:8px;min-width:165px}
+.chip:hover{border-color:var(--accent-2)}
+.chip .ci{font-size:18px}
+.chip .cmeta{display:flex;flex-direction:column;line-height:1.15}
+.chip .cname{font-size:12px;color:var(--muted)}
+.chip .cband{font-size:15px;font-weight:700}
+.rankdot{margin-left:auto;width:34px;height:34px;border-radius:8px;display:grid;place-items:center;font-weight:800;font-size:14px;color:#06210f}
+.band-A{background:#00855a;color:#fff}.band-B{background:#19b459}.band-C{background:#8dce46}.band-D{background:#fcaa65}.band-E{background:#ef8023;color:#fff}.band-F{background:#e9153b;color:#fff}.band-x{background:#3a4654;color:#cdd9e4}
+/* layout */
+main{max-width:1500px;margin:0 auto;padding:18px 22px;display:grid;gap:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.card>header{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--panel-3);cursor:pointer;border-bottom:1px solid var(--line)}
+.card>header .hi{font-size:22px}
+.card>header h2{font-size:16px;margin:0}
+.card>header .hsub{font-size:12px;color:var(--muted)}
+.card>header .hrank{margin-left:auto;display:flex;align-items:center;gap:10px}
+.hrank .pill{font-size:11px;border-radius:999px;padding:2px 9px;border:1px solid var(--line)}
+.pill.pass{background:#1c3a29;color:#bff3d2}.pill.warn{background:#3a3320;color:#f3e3b8}.pill.fail{background:#3a201c;color:#f4c2b8}
+.card .body{display:grid;grid-template-columns:1fr 1fr;gap:0}
+@media(max-width:920px){.card .body{grid-template-columns:1fr}}
+.inputs{padding:14px 16px;border-right:1px solid var(--line)}
+@media(max-width:920px){.inputs{border-right:none;border-bottom:1px solid var(--line)}}
+.results{padding:14px 16px;background:#141a22}
+.subbox{border:1px solid var(--line);border-radius:8px;padding:6px 12px 12px;margin:10px 0;background:var(--panel-2)}
+.subbox>.sbtitle{font-size:12px;font-weight:600;color:var(--accent-2);text-transform:uppercase;letter-spacing:.5px;margin:6px 0 2px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px}
+@media(max-width:520px){.grid2{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:3px;margin:6px 0}.field label{font-size:12px;color:var(--muted)}
+.field input[type=number],.field input[type=text],.field select{width:100%}
+.field.check{flex-direction:row;align-items:center;gap:8px}.field.check label{font-size:13px;color:var(--ink)}.field.check input{width:auto}
+.collapsed .body{display:none}
+.caret{transition:transform .15s}.collapsed .caret{transform:rotate(-90deg)}
+/* findings */
+.findings{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.finding{border:1px solid var(--line);border-left-width:4px;border-radius:8px;padding:8px 11px;background:var(--panel-2)}
+.finding.pass{border-left-color:var(--pass)}.finding.fail{border-left-color:var(--fail)}.finding.warning{border-left-color:var(--warn)}.finding.info{border-left-color:var(--info)}.finding.not-applicable{border-left-color:#3a4654;opacity:.85}
+.finding .ftitle{font-weight:600;display:flex;justify-content:space-between;gap:8px;font-size:13px}
+.status-tag{font-size:10px;text-transform:uppercase;letter-spacing:.5px;padding:1px 7px;border-radius:999px;white-space:nowrap}
+.status-tag.pass{background:#1c3a29;color:#bff3d2}.status-tag.fail{background:#3a201c;color:#f4c2b8}.status-tag.warning{background:#3a3320;color:#f3e3b8}.status-tag.info{background:#26313c;color:#cdd9e4}.status-tag.not-applicable{background:#26313c;color:#9fb0c0}
+.finding .fdetail{font-size:12.5px;margin:3px 0 0}.finding .fmeta{font-size:11.5px;color:var(--muted);margin-top:3px}.finding .frec{font-size:11.5px;margin-top:3px;color:#cfe9d8}
+.gatebadge{font-size:10px;color:#f4c2b8;border:1px solid #6e352f;border-radius:4px;padding:0 5px;margin-left:6px}
+.rankhead{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.rankhead .big{width:52px;height:52px;border-radius:10px;display:grid;place-items:center;font-weight:800;font-size:22px}
+.rankhead .rmeta .rt{font-size:13px;font-weight:600}.rankhead .rmeta .rs{font-size:12px;color:var(--muted)}
+.minibars{display:grid;gap:4px;margin:8px 0 12px}
+.mb{display:grid;grid-template-columns:80px 1fr 40px;gap:8px;align-items:center;font-size:11px}
+.mbtrack{height:8px;background:#243040;border-radius:5px;overflow:hidden}.mbfill{height:100%}
+.sitefoot{max-width:1500px;margin:0 auto;padding:6px 22px 26px}.sitefoot p{font-size:12px;color:var(--muted)}
+.na-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.na-pill{font-size:11px;border:1px dashed var(--line);border-radius:999px;padding:2px 9px;color:var(--muted)}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topline">
+    <div class="brand"><span class="logo">🧭</span>
+      <div><h1>ResiCert Studio</h1><p class="tagline">Discipline-based building-regulations decipher — enter specs per stakeholder, get live compliance ranks</p></div>
+    </div>
+    <div class="topbar-actions">
+      <label for="sample" class="sr-only">Load example</label>
+      <select id="sample" title="Load an example project"></select>
+      <button class="ghost" id="expandAll">Expand all</button>
+      <button class="ghost" id="collapseAll">Collapse all</button>
+    </div>
+  </div>
+  <div class="summary" id="summary"></div>
+</header>
+
+<main id="main"></main>
+
+<footer class="sitefoot"><p id="disclaimer"></p></footer>
+
+<script type="module">
+/* ============================================================================
+   ResiCert Studio — standalone, single-file. Inputs organised by STAKEHOLDER
+   DISCIPLINE (Architecture, MEP, Structure & Fire, Sustainability/Energy,
+   Planning). Each Building-Regulations / planning check is attributed to the
+   discipline responsible for it, so each discipline gets its own live rank and
+   the project gets an overall Building-Regs verdict + readiness band.
+   INDICATIVE only — not a SAP/EPC calc or Building Control sign-off.
+   ========================================================================== */
+
+// ---------- helpers ----------
+const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
+const round=(n,dp=1)=>{const f=10**dp;return Math.round((n+Number.EPSILON)*f)/f;};
+const savingPct=(base,des)=>!(base>0)?0:round(((base-des)/base)*100,1);
+const epcBand=s=>s>=92?'A':s>=81?'B':s>=69?'C':s>=55?'D':s>=39?'E':s>=21?'F':'G';
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const titleCase=s=>String(s).replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+/* a finding; gate:true means a fail here blocks Building-Regs compliance */
+const F=(id,title,status,detail,x={})=>({id,title,status,detail,gate:false,...x});
+
+// ---------- domain model ----------
+const OPT={
+  nation:['england','wales','scotland','northern-ireland'],
+  region:['london','south-east','south-west','east','east-midlands','west-midlands','yorkshire','north-west','north-east','wales','scotland','northern-ireland'],
+  dwellingType:['house','flat','maisonette','bungalow'],
+  builtForm:['detached','semi-detached','mid-terrace','end-terrace','apartment-block'],
+  projectType:['new-build','major-refurbishment','change-of-use','extension'],
+  heatingSystem:['gas-boiler','ashp','gshp','direct-electric','hydrogen-ready','heat-network','biomass'],
+  ventilationSystem:['mvhr','mev','dev','natural'],
+  primaryStructure:['masonry','timber-frame','clt','light-steel','icf'],
+};
+function defaultProject(){return{
+  name:'Untitled scheme',reference:'',
+  nation:'england',region:'south-east',dwellingType:'house',builtForm:'semi-detached',projectType:'new-build',
+  waterStressedArea:false,units:1,storeys:2,topStoreyHeightM:5,bedrooms:3,bedspaces:5,gia:93,
+  uWall:0.18,uRoof:0.13,uFloor:0.13,uWindow:1.4,airPermeability:5,thermalBridging:0.05,glazingRatio:0.22,
+  heatingSystem:'gas-boiler',ventilationSystem:'natural',waterUseLpd:125,pvKwp:0,batteryStorage:false,
+  evChargePoint:true,gigabitInfrastructure:true,gigabitConnection:true,
+  crossVentilation:true,solarShading:false,daylightFactorAvg:1.8,accessibleM4_2:false,wheelchairM4_3:false,
+  pas24SecureDoors:true,separatingSoundDnTw:45,impactSoundLnTw:62,
+  primaryStructure:'masonry',embodiedCarbonA1A5:700,responsiblySourcedMaterials:true,recycledContent:false,
+  suds:false,rainwaterHarvesting:false,greywaterReuse:false,
+  biodiversityNetGainPct:10,affordableHousingPct:0,cycleStorage:true,parkingSpaces:2,
+  sapEpcScore:null,targetCertifications:[],
+};}
+function normalise(input={}){
+  const base=defaultProject(),out={...base};
+  for(const k of Object.keys(base)){
+    if(!(k in input))continue;const def=base[k],raw=input[k];
+    if(raw===undefined||raw===null){if(k==='sapEpcScore')out[k]=null;continue;}
+    if(typeof def==='number'){const n=Number(raw);out[k]=Number.isFinite(n)?n:def;}
+    else if(typeof def==='boolean')out[k]=raw===true||raw==='true'||raw==='on'||raw===1||raw==='1';
+    else if(Array.isArray(def))out[k]=Array.isArray(raw)?raw.map(String):String(raw).split(',').map(s=>s.trim()).filter(Boolean);
+    else out[k]=String(raw);
+  }
+  return out;
+}
+
+// ---------- energy model (indicative) ----------
+const HDD={london:2030,'south-east':2100,'south-west':2050,east:2200,'east-midlands':2300,'west-midlands':2300,yorkshire:2400,'north-west':2350,'north-east':2450,wales:2250,scotland:2650,'northern-ireland':2400};
+const PVY={london:950,'south-east':980,'south-west':1000,east:970,'east-midlands':920,'west-midlands':910,yorkshire:880,'north-west':870,'north-east':860,wales:900,scotland:820,'northern-ireland':850};
+const EXP={detached:1,'semi-detached':.75,'end-terrace':.7,'mid-terrace':.55,'apartment-block':.5};
+const CO2={electricity:.136,gas:.21,biomass:.029,'heat-network':.15};
+const PE={electricity:1.501,gas:1.13,biomass:1.1,'heat-network':1.3};
+const HEFF={'gas-boiler':.9,ashp:3,gshp:3.8,'direct-electric':1,'hydrogen-ready':.9,'heat-network':1,biomass:.85};
+const HFUEL={'gas-boiler':'gas',ashp:'electricity',gshp:'electricity','direct-electric':'electricity','hydrogen-ready':'gas','heat-network':'heat-network',biomass:'biomass'};
+const MVHR={mvhr:.88,mev:0,dev:0,natural:0};const SH=2.4;
+function energy(p){
+  const fp=p.gia/Math.max(1,p.storeys),side=Math.sqrt(Math.max(1,fp)),perim=4*side,exp=EXP[p.builtForm]??.8;
+  const grossWall=perim*SH*p.storeys*exp,glz=clamp(p.glazingRatio,0,.9)*p.gia,wall=Math.max(0,grossWall-glz);
+  const deck=p.builtForm==='apartment-block'?.4:1,roof=fp*deck,floor=fp*deck,tot=wall+glz+roof+floor;
+  const fab=p.uWall*wall+p.uWindow*glz+p.uRoof*roof+p.uFloor*floor+p.thermalBridging*tot;
+  const vol=p.gia*SH,infil=p.airPermeability/20,rec=MVHR[p.ventilationSystem]??0,vent=.5*(1-rec),ventHLC=.33*(infil+vent)*vol;
+  const hlc=fab+ventHLC,gross=(hlc*HDD[p.region]*24)/1000,util=clamp(.78-p.glazingRatio*.1,.6,.85),spaceHeat=gross*util;
+  const dhw=p.bedspaces*1.1*365*1.15,eff=HEFF[p.heatingSystem]??1,fuel=HFUEL[p.heatingSystem]??'electricity';
+  const delHeat=(spaceHeat+dhw)/eff,lightAux=9*p.gia**.5*5+p.gia*4,pv=p.pvKwp*(PVY[p.region]??900);
+  let elec=lightAux,gas=0,other=0;
+  if(fuel==='electricity')elec+=delHeat;else if(fuel==='gas')gas+=delHeat;else other+=delHeat;
+  const selfUse=Math.min(elec,pv*.6),exp2=Math.max(0,pv-selfUse),netE=Math.max(0,elec-selfUse);
+  const of=(fuel==='electricity'||fuel==='gas')?'electricity':fuel;
+  const co2=netE*CO2.electricity+gas*CO2.gas+other*(CO2[of]??CO2.electricity)-exp2*CO2.electricity;
+  const prim=netE*PE.electricity+gas*PE.gas+other*(PE[of]??PE.electricity)-exp2*PE.electricity;
+  return{netElectricity:round(netE),gas:round(gas),exported:round(exp2),co2PerM2:round(co2/p.gia,1),primaryPerM2:round(prim/p.gia),
+    eui:round((delHeat+lightAux)/p.gia,1),spaceHeatIntensity:round(spaceHeat/p.gia,1),fuel};
+}
+function epcOf(p,m){
+  if(typeof p.sapEpcScore==='number'&&p.sapEpcScore>0){const s=clamp(p.sapEpcScore,1,100);return{score:round(s),band:epcBand(s),declared:true};}
+  const cost=m.netElectricity*.27+m.gas*.07-m.exported*.05,cpm=cost/p.gia,score=clamp(Math.round(100-cpm*6),1,100);
+  return{score,band:epcBand(score),declared:false};
+}
+function notional(p){return{...p,uWall:.18,uRoof:.11,uFloor:.13,uWindow:1.2,airPermeability:5,thermalBridging:.05,heatingSystem:'gas-boiler',pvKwp:round((p.gia/Math.max(1,p.storeys))*.04,2)};}
+function edgeOf(p,m){
+  const EB={masonry:800,'light-steel':780,icf:760,'timber-frame':650,clt:600};
+  const en=savingPct(130,m.eui);let w=p.waterUseLpd;if(p.rainwaterHarvesting)w*=.88;if(p.greywaterReuse)w*=.9;const wat=savingPct(150,w);
+  const eb=EB[p.primaryStructure]??750;let e=p.embodiedCarbonA1A5;if(p.recycledContent)e*=.96;if(p.responsiblySourcedMaterials)e*=.99;const mat=savingPct(eb,e);
+  const all=en>=20&&wat>=20&&mat>=20,zero=m.co2PerM2<=0;
+  let tier='none';if(zero&&all)tier='zero-carbon';else if(all&&en>=40)tier='advanced';else if(all)tier='certified';
+  return{pillars:{energy:{saving:en,baseline:130,design:m.eui,unit:'kWh/m²·yr'},water:{saving:wat,baseline:150,design:round(w,1),unit:'L/p·day'},materials:{saving:mat,baseline:eb,design:round(e),unit:'kgCO₂e/m²'}},all,zero,tier};
+}
+
+// ---------- aspirational schemes (resi-gated, brief) ----------
+const isMulti=p=>p.units>1||p.builtForm==='apartment-block'||p.dwellingType==='flat'||p.dwellingType==='maisonette';
+const SCHEMES=[
+ {id:'breeam',name:'BREEAM',multi:false,test:p=>true},
+ {id:'hqm',name:'Home Quality Mark',multi:false,test:p=>true},
+ {id:'passivhaus',name:'Passivhaus',multi:false,test:p=>true},
+ {id:'leed-residential',name:'LEED Residential',multi:false,test:p=>true},
+ {id:'well',name:'WELL',multi:true,test:isMulti},
+ {id:'fitwel',name:'Fitwel',multi:true,test:isMulti},
+ {id:'wiredscore-home',name:'WiredScore Home',multi:true,test:isMulti},
+ {id:'smartscore',name:'SmartScore',multi:true,test:isMulti},
+ {id:'building-with-nature',name:'Building with Nature',multi:true,test:p=>p.units>=5},
+ {id:'nabers-uk',name:'NABERS UK',multi:true,test:p=>false},
+];
+function certs(p){const app=[],na=[];for(const s of SCHEMES){(s.test(p)?app:na).push(s.name);}return{app,na};}
+
+// ---------- discipline-attributed checks ----------
+function architecture(p){
+  const f=[];const attached=p.dwellingType==='flat'||p.dwellingType==='maisonette'||['apartment-block','mid-terrace','semi-detached','end-terrace'].includes(p.builtForm);
+  // Part L limiting fabric (architect-owned)
+  const LIM={wall:.26,roof:.16,floor:.18,window:1.6,ap:8},NOT={wall:.18,roof:.11,floor:.13,window:1.2};
+  const iss=[];if(p.uWall>LIM.wall)iss.push(`wall ${p.uWall}>${LIM.wall}`);if(p.uRoof>LIM.roof)iss.push(`roof ${p.uRoof}>${LIM.roof}`);if(p.uFloor>LIM.floor)iss.push(`floor ${p.uFloor}>${LIM.floor}`);if(p.uWindow>LIM.window)iss.push(`window ${p.uWindow}>${LIM.window}`);if(p.airPermeability>LIM.ap)iss.push(`air perm ${p.airPermeability}>${LIM.ap}`);
+  if(iss.length)f.push(F('L-fabric','Part L — fabric build-up','fail',`Exceeds Part L 2021 limiting values: ${iss.join('; ')}.`,{gate:true,requirement:'wall ≤0.26, roof ≤0.16, floor ≤0.18, window ≤1.6 W/m²K; air perm ≤8.',recommendation:'Improve the listed elements; aim for notional values.',reference:'AD L Vol 1 (2021), Table 1.2'}));
+  else{const ok=p.uWall<=NOT.wall&&p.uRoof<=NOT.roof&&p.uFloor<=NOT.floor&&p.uWindow<=NOT.window;f.push(F('L-fabric','Part L — fabric build-up',ok?'pass':'warning',ok?'Meets/beats notional-dwelling fabric values (good practice).':'Meets limiting but not all notional values; target rate may need PV/heat-pump compensation.',{requirement:'Notional wall ≤0.18, roof ≤0.11, floor ≤0.13, window ≤1.2.',reference:'AD L Vol 1 (2021)'}));}
+  // Part O overheating
+  if(p.projectType==='new-build'||p.projectType==='change-of-use'){const hr=p.region==='london',hi=p.glazingRatio>0.25;
+    if(hi&&!p.solarShading&&!p.crossVentilation)f.push(F('O','Part O — overheating','fail',`High glazing (${Math.round(p.glazingRatio*100)}%) with no shading & no cross ventilation${hr?' in a higher-risk location':''}.`,{gate:true,recommendation:'Add shading / reduce glazing & provide cross ventilation, or model with TM59.',reference:'AD O (2021)'}));
+    else if(hi&&(!p.solarShading||!p.crossVentilation))f.push(F('O','Part O — overheating','warning',`Glazing ${Math.round(p.glazingRatio*100)}% with partial mitigation; may need TM59 verification.`,{recommendation:'Confirm simplified-method limits or model with TM59.',reference:'AD O (2021)'}));
+    else f.push(F('O','Part O — overheating','pass','Solar gains & heat-removal provisions appear reasonable.',{reference:'AD O (2021)'}));
+  }else f.push(F('O','Part O — overheating','not-applicable','Applies to new dwellings / some changes of use.',{reference:'AD O (2021)'}));
+  // Space (NDSS) — architect delivers; advisory (planning-condition dependent)
+  const NDSS={'1b1p':[39,39,39],'1b2p':[50,58,58],'2b3p':[61,70,70],'2b4p':[70,79,79],'3b4p':[74,84,90],'3b5p':[86,93,99],'3b6p':[95,102,108],'4b5p':[90,97,103],'4b6p':[99,106,112],'4b7p':[108,115,121],'4b8p':[117,124,130],'5b6p':[103,110,116],'5b7p':[112,119,125]};
+  const key=`${p.bedrooms}b${p.bedspaces}p`,col=p.storeys<=1?0:p.storeys===2?1:2,min=NDSS[key]?NDSS[key][col]:round(25+Math.max(0,p.bedspaces-1)*17+(col>=1?6:0)+(col>=2?6:0));
+  f.push(F('ndss','Space standards (NDSS)',p.gia>=min?'pass':'fail',`GIA ${p.gia} m² vs ${min} m² minimum (${p.bedrooms}b/${p.bedspaces}p, ${p.storeys}-storey).`,{recommendation:p.gia>=min?undefined:'Increase floor area or revise bed/person mix.',reference:'NDSS (2015) — where adopted by the local plan'}));
+  // Part M access
+  f.push(F('M','Part M — access',(p.accessibleM4_2||p.wheelchairM4_3)?'pass':'pass',(p.wheelchairM4_3?'Designed to M4(3) wheelchair-user standard.':p.accessibleM4_2?'Designed to M4(2) accessible & adaptable standard.':'Assumed to meet the mandatory M4(1) baseline — confirm if the local plan requires M4(2)/M4(3).'),{requirement:'M4(1) mandatory; M4(2)/M4(3) where set by planning.',reference:'AD M Vol 1 (2015)'}));
+  // Part E acoustics
+  if(attached){const a=p.separatingSoundDnTw>=45,i=p.impactSoundLnTw<=62;
+    if(!a||!i)f.push(F('E','Part E — sound insulation','fail',`Separating element below standard${!a?` (airborne ${p.separatingSoundDnTw}<45 dB)`:''}${!i?` (impact ${p.impactSoundLnTw}>62 dB)`:''}.`,{gate:true,recommendation:'Upgrade build-ups; pre-completion testing or Robust Details.',reference:'AD E (2003, 2015)'}));
+    else f.push(F('E','Part E — sound insulation','pass',`Meets standard (airborne ${p.separatingSoundDnTw} dB, impact ${p.impactSoundLnTw} dB).`,{reference:'AD E'}));
+  }else f.push(F('E','Part E — sound insulation','not-applicable','No separating walls/floors with other dwellings (detached).',{reference:'AD E'}));
+  // Part Q security
+  f.push(F('Q','Part Q — security',p.pas24SecureDoors?'pass':'fail',p.pas24SecureDoors?'Accessible doors/windows to PAS 24 (or equivalent).':'Accessible doorsets/windows not confirmed to PAS 24.',{gate:true,recommendation:'Specify PAS 24 doorsets and accessible windows.',reference:'AD Q (2015)'}));
+  // Daylight
+  f.push(F('daylight','Daylight (BRE / BS EN 17037)',p.daylightFactorAvg>=1.5?'pass':'warning',`Average daylight factor ${p.daylightFactorAvg}% ${p.daylightFactorAvg>=1.5?'meets':'is below'} the ~1.5–2% guide.`,{recommendation:p.daylightFactorAvg>=1.5?undefined:'Increase glazing/room proportions or revise massing.',reference:'BRE BR 209; BS EN 17037'}));
+  // Part K (qualitative)
+  f.push(F('K','Part K — protection from falling/glazing','info','Stairs, guarding and safety glazing to be confirmed in detailed design.',{reference:'AD K (2013)'}));
+  return f;
+}
+function mep(p){
+  const f=[];
+  // Part L heating / FHS
+  if(p.heatingSystem==='gas-boiler')f.push(F('L-heat','Part L / FHS — heating system','warning','Gas boiler: compliant under Part L 2021 but not aligned with the Future Homes Standard 2025 (low-carbon heat expected).',{recommendation:'Consider an air-source heat pump.',reference:'FHS consultation'}));
+  else f.push(F('L-heat','Part L / FHS — heating system','pass',`Low/zero-combustion heating (${p.heatingSystem}) aligned with the Future Homes direction.`,{reference:'AD L; FHS'}));
+  // Part F ventilation
+  if(p.airPermeability<=5&&p.ventilationSystem==='natural')f.push(F('F','Part F — ventilation','warning',`At ${p.airPermeability} m³/h·m² the dwelling is airtight; natural ventilation may be insufficient for IAQ.`,{recommendation:'Specify continuous MEV or MVHR.',reference:'AD F Vol 1 (2021)'}));
+  else f.push(F('F','Part F — ventilation','pass',`Ventilation (${p.ventilationSystem}) appropriate for air permeability ${p.airPermeability}.`,{reference:'AD F Vol 1 (2021)'}));
+  // Part G2 water
+  const wl=p.waterStressedArea?110:125;
+  if(p.waterUseLpd>wl)f.push(F('G2','Part G2 — water efficiency','fail',`Water use ${p.waterUseLpd} L/p/day exceeds the ${wl} L/p/day requirement.`,{gate:true,recommendation:'Specify low-flow fittings and dual-flush WCs.',reference:'AD G (2015), Reg 36'}));
+  else f.push(F('G2','Part G2 — water efficiency','pass',`Water use ${p.waterUseLpd} L/p/day meets the ${wl} L/p/day requirement.`,{reference:'AD G (2015)'}));
+  // Part S EV
+  if(p.parkingSpaces>0&&!p.evChargePoint)f.push(F('S','Part S — EV charging','fail','Associated parking provided but no EV charge point specified.',{gate:true,recommendation:'Provide a 7 kW charge point per dwelling with parking.',reference:'AD S (2021)'}));
+  else f.push(F('S','Part S — EV charging',p.parkingSpaces>0?'pass':'not-applicable',p.parkingSpaces>0?'EV charge point provided.':'No associated parking — requirement does not apply.',{reference:'AD S (2021)'}));
+  // Part R comms
+  if(!p.gigabitInfrastructure)f.push(F('R','Part R — gigabit infrastructure','fail','Gigabit-ready in-building infrastructure not provided.',{gate:true,recommendation:'Provide ducting/containment and a gigabit connection within the cap.',reference:'AD R (2022)'}));
+  else f.push(F('R','Part R — gigabit infrastructure',p.gigabitConnection?'pass':'warning',p.gigabitConnection?'Gigabit-ready infrastructure & connection provided.':'Infrastructure provided; confirm a connection where available.',{reference:'AD R (2022)'}));
+  // Part P electrical (qualitative)
+  f.push(F('P','Part P — electrical safety','info','Fixed electrical installation to be designed, installed & certified by a competent person.',{reference:'AD P (2013)'}));
+  // Part J combustion (only if combustion appliance)
+  if(p.heatingSystem==='gas-boiler'||p.heatingSystem==='biomass'||p.heatingSystem==='hydrogen-ready')
+    f.push(F('J','Part J — combustion appliances','info','Flue, air supply & CO alarm provision to be confirmed for the combustion appliance.',{reference:'AD J (2010)'}));
+  return f;
+}
+function structure(p){
+  const f=[];
+  // Part A (qualitative)
+  f.push(F('A','Part A — structure','info',`${titleCase(p.primaryStructure)} structure: loading, ground movement & disproportionate collapse to be confirmed by the engineer.`,{reference:'AD A'}));
+  // Part B fire (height-driven)
+  const h=p.topStoreyHeightM,block=p.builtForm==='apartment-block'||p.dwellingType==='flat',notes=[];let st='pass';
+  if(h>18){notes.push('Top storey >18 m: combustible external-wall materials banned (Reg 7(2)).');st='warning';}
+  if(block&&h>11){notes.push('New block of flats >11 m: sprinkler/AFSS provision required.');st='warning';}
+  if(h>18)notes.push('Tall residential: justify a staircase strategy per current guidance.');
+  f.push(F('B','Part B — fire safety',st,notes.length?notes.join(' '):'Standard dwelling fire-safety provisions apply; detailed design by a competent person.',{recommendation:st==='warning'?'Engage a fire engineer; confirm cladding, sprinklers & escape strategy.':undefined,reference:'AD B Vol 1; Reg 7(2)'}));
+  // Reg 7 materials
+  f.push(F('reg7','Regulation 7 — materials & workmanship',h>18?'warning':'info',h>18?'Over 18 m: external-wall materials must be non-combustible (limited exceptions).':'Materials adequacy & fitness to be confirmed; combustibility limits apply over 18 m.',{reference:'Reg 7(2)'}));
+  // Embodied carbon (not a Building Reg — advisory vs benchmark)
+  const EB={masonry:800,'light-steel':780,icf:760,'timber-frame':650,clt:600},base=EB[p.primaryStructure]??750;let e=p.embodiedCarbonA1A5;if(p.recycledContent)e*=.96;if(p.responsiblySourcedMaterials)e*=.99;const sv=savingPct(base,round(e));
+  f.push(F('embodied','Embodied carbon (A1–A5)',sv>=20?'pass':sv>=0?'warning':'warning',`~${round(e)} kgCO₂e/m² vs a ${base} benchmark for ${titleCase(p.primaryStructure)} (${sv}% ${sv>=0?'lower':'higher'}).`,{recommendation:sv>=20?undefined:'Reduce upfront carbon (low-carbon concrete, more timber, less material) towards a 20% saving.',reference:'RICS / LETI benchmarks — advisory, not a Building Reg'}));
+  return f;
+}
+function sustainability(p,m,epc,edge){
+  const f=[];
+  // Part L target rates (mandatory for new builds)
+  if(p.projectType==='new-build'||p.projectType==='change-of-use'){
+    const t=energy(notional(p)),ter=round(t.co2PerM2,1),der=round(m.co2PerM2,1),tper=round(t.primaryPerM2),dper=round(m.primaryPerM2);
+    f.push(F('der','Part L — CO₂ rate (DER ≤ TER)',der<=ter?'pass':'fail',`Modelled DER ${der} vs TER ${ter} kgCO₂/m²·yr.`,{gate:true,recommendation:der<=ter?undefined:'Improve fabric, switch to a heat pump, or add PV.',reference:'AD L Vol 1 (2021)'}));
+    f.push(F('per','Part L — primary energy (DPER ≤ TPER)',dper<=tper?'pass':'fail',`Modelled DPER ${dper} vs TPER ${tper} kWh/m²·yr.`,{gate:true,recommendation:dper<=tper?undefined:'Reduce delivered energy and/or add renewables.',reference:'AD L Vol 1 (2021)'}));
+    const cut=ter>0?((ter-der)/ter)*100:0,low=['ashp','gshp','heat-network'].includes(p.heatingSystem);
+    f.push(F('fhs','Future Homes Standard readiness',(low&&cut>=70)?'pass':'warning',`${low?'':'Fossil-fuel heating; '}~${round(cut)}% CO₂ reduction vs the 2021 target (FHS expects ~75–80% + low-carbon heat).`,{recommendation:(low&&cut>=70)?undefined:'Adopt a heat pump, strengthen fabric and add PV.',reference:'FHS'}));
+  }else f.push(F('partL-scope','Part L target rates','not-applicable','Full target-rate compliance applies to new builds / material changes of use.',{reference:'AD L Vol 1 (2021)'}));
+  // EPC band (advisory)
+  f.push(F('epc','EPC band (indicative)',epc.score>=81?'pass':epc.score>=69?'warning':'warning',`Indicative EPC band ${epc.band} (${epc.score}/100)${epc.declared?' — declared':''}.`,{recommendation:epc.score>=81?undefined:'Target band B/A via fabric, heat pump and/or PV.',reference:'Indicative — not an accredited SAP/EPC'}));
+  // EDGE pillars (advisory, ≥20% bar)
+  for(const[name,pl]of Object.entries(edge.pillars))
+    f.push(F('edge-'+name,`EDGE — ${name} saving`,pl.saving>=20?'pass':'warning',`${pl.saving}% vs base case (design ${pl.design} ${pl.unit}, baseline ${pl.baseline} ${pl.unit}).`,{recommendation:pl.saving>=20?undefined:`Push ${name} saving past the 20% EDGE bar.`,reference:'EDGE-style 3-pillar (energy/water/materials)'}));
+  // Zero carbon flag
+  f.push(F('zero','Operational zero-carbon',edge.zero?'pass':'info',edge.zero?'Net-zero regulated operational carbon achieved (modelled).':`Not yet net-zero operational (${m.co2PerM2} kgCO₂/m²·yr). Add renewables / low-carbon heat.`,{reference:'Indicative operational carbon'}));
+  return f;
+}
+function planning(p){
+  const f=[];
+  // BNG (statutory)
+  if(p.biodiversityNetGainPct<10)f.push(F('bng','Biodiversity Net Gain','fail',`Proposed BNG ${p.biodiversityNetGainPct}% is below the statutory 10% minimum.`,{gate:true,recommendation:'Deliver ≥10% measurable net gain, secured for 30 years.',reference:'Environment Act 2021'}));
+  else f.push(F('bng','Biodiversity Net Gain','pass',`Proposed BNG ${p.biodiversityNetGainPct}% meets/exceeds the statutory 10% minimum.`,{reference:'Environment Act 2021'}));
+  // SuDS
+  f.push(F('suds','Sustainable drainage (SuDS)',p.suds?'pass':'warning',p.suds?'Sustainable drainage proposed.':'No SuDS indicated; NPPF/local policy expects the drainage hierarchy.',{recommendation:p.suds?undefined:'Incorporate SuDS and demonstrate greenfield run-off rates.',reference:'NPPF; SuDS standards'}));
+  // accessible mix
+  f.push(F('accmix','Accessible-housing mix (M4(2)/M4(3))',(p.accessibleM4_2||p.wheelchairM4_3)?'pass':'warning',(p.accessibleM4_2||p.wheelchairM4_3)?'Accessible/adaptable provision indicated.':'No M4(2)/M4(3) provision; many local plans require a proportion.',{recommendation:(p.accessibleM4_2||p.wheelchairM4_3)?undefined:'Check the local plan; design the required proportion.',reference:'Local plan accessibility policy'}));
+  // affordable
+  f.push(F('aff','Affordable housing','info',p.units>1?`${p.units} units, ${p.affordableHousingPct}% affordable. Most authorities seek 30–50% on qualifying sites (10+ units).`:'Single dwelling — affordable-housing policy generally does not apply.',{reference:'NPPF; local policy'}));
+  // cycle
+  f.push(F('cycle','Cycle storage',p.cycleStorage?'pass':'warning',p.cycleStorage?'Secure cycle storage provided.':'No secure cycle storage indicated.',{reference:'NPPF; local standards'}));
+  // nation
+  if(p.nation!=='england'){const nm={wales:'Welsh Approved Documents',scotland:'Scottish Technical Handbooks','northern-ireland':'NI Technical Booklets'}[p.nation];f.push(F('nation','Devolved standards apply','warning',`Project in ${titleCase(p.nation)} — uses ${nm}. England thresholds applied as indicative only.`,{reference:nm}));}
+  return f;
+}
+
+// ---------- rank a set of findings ----------
+function rank(findings){
+  const c=findings.filter(f=>['pass','warning','fail'].includes(f.status));
+  const counts={pass:0,warning:0,fail:0};for(const f of c)counts[f.status]++;
+  const gateFail=findings.some(f=>f.gate&&f.status==='fail');
+  if(!c.length)return{score:null,band:'x',label:'—',counts,gateFail:false};
+  const pts=c.reduce((a,f)=>a+(f.status==='pass'?1:f.status==='warning'?.5:0),0),score=Math.round(pts/c.length*100);
+  let band;if(gateFail)band='F';else if(score>=90)band='A';else if(score>=75)band='B';else if(score>=60)band='C';else if(score>=40)band='D';else band='E';
+  return{score,band,label:gateFail?'Non-compliant':'Band '+band,counts,gateFail};
+}
+
+// ---------- full assessment ----------
+const DISCIPLINES=[
+ {id:'architecture',name:'Architecture',icon:'📐',blurb:'Fabric, glazing/overheating, space, access, acoustics, security, daylight',fn:p=>architecture(p)},
+ {id:'mep',name:'MEP (M&E + Public Health)',icon:'⚙️',blurb:'Heating, ventilation, water, renewables, EV & connectivity',fn:p=>mep(p)},
+ {id:'structure',name:'Structure & Fire',icon:'🏗️',blurb:'Structural system, fire safety, Reg 7, embodied carbon',fn:p=>structure(p)},
+ {id:'sustainability',name:'Sustainability & Energy',icon:'🌿',blurb:'Part L target rates, EPC, EDGE pillars, Future Homes Standard',fn:(p,m,e,g)=>sustainability(p,m,e,g)},
+ {id:'planning',name:'Planning',icon:'🗺️',blurb:'BNG, SuDS, accessible mix, affordable, transport',fn:p=>planning(p)},
+];
+function assess(input){
+  const p=normalise(input),m=energy(p),epc=epcOf(p,m),edge=edgeOf(p,m);
+  const disc={architecture:architecture(p),mep:mep(p),structure:structure(p),sustainability:sustainability(p,m,epc,edge),planning:planning(p)};
+  const ranks={};for(const d of DISCIPLINES)ranks[d.id]=rank(disc[d.id]);
+  const all=Object.values(disc).flat();
+  const gateFails=all.filter(f=>f.gate&&f.status==='fail');
+  const compliant=gateFails.length===0;
+  // readiness = mean of discipline scores (excludes empty)
+  const scored=Object.values(ranks).filter(r=>r.score!=null);
+  const readiness=scored.length?Math.round(scored.reduce((a,r)=>a+r.score,0)/scored.length):0;
+  let band;if(!compliant)band='F';else if(readiness>=90)band='A';else if(readiness>=75)band='B';else if(readiness>=60)band='C';else if(readiness>=40)band='D';else band='E';
+  return{project:p,model:m,epc,edge,disc,ranks,compliant,gateFails,readiness,band,certs:certs(p)};
+}
+
+// ---------- sample projects ----------
+const SAMPLES={
+ 'baseline-house':{name:'Code-minimum gas house (baseline)'},
+ 'best-practice-house':{name:'Best-practice all-electric house',region:'south-west',builtForm:'detached',bedrooms:4,bedspaces:6,gia:120,uWall:.15,uRoof:.1,uFloor:.11,uWindow:1.1,airPermeability:3,thermalBridging:.04,glazingRatio:.2,heatingSystem:'ashp',ventilationSystem:'mvhr',waterUseLpd:95,pvKwp:4,batteryStorage:true,solarShading:true,daylightFactorAvg:2.2,accessibleM4_2:true,primaryStructure:'timber-frame',embodiedCarbonA1A5:480,responsiblySourcedMaterials:true,recycledContent:true,suds:true,rainwaterHarvesting:true,biodiversityNetGainPct:20,targetCertifications:['hqm','passivhaus']},
+ 'passivhaus-house':{name:'Passivhaus-aspiring house',builtForm:'detached',bedrooms:4,bedspaces:6,gia:130,uWall:.12,uRoof:.1,uFloor:.1,uWindow:.8,airPermeability:.6,thermalBridging:.02,glazingRatio:.18,heatingSystem:'ashp',ventilationSystem:'mvhr',waterUseLpd:90,pvKwp:5,batteryStorage:true,solarShading:true,daylightFactorAvg:2,primaryStructure:'timber-frame',embodiedCarbonA1A5:450,responsiblySourcedMaterials:true,recycledContent:true,suds:true,biodiversityNetGainPct:15,targetCertifications:['passivhaus']},
+ 'btr-apartment-block':{name:'Build-to-rent apartment block (London)',region:'london',dwellingType:'flat',builtForm:'apartment-block',waterStressedArea:true,units:80,storeys:8,topStoreyHeightM:24,bedrooms:2,bedspaces:3,gia:61,uWall:.16,uRoof:.12,uFloor:.12,uWindow:1.2,airPermeability:3,thermalBridging:.05,glazingRatio:.3,heatingSystem:'heat-network',ventilationSystem:'mvhr',waterUseLpd:105,pvKwp:30,solarShading:true,crossVentilation:false,daylightFactorAvg:1.7,accessibleM4_2:true,wheelchairM4_3:true,separatingSoundDnTw:50,impactSoundLnTw:58,primaryStructure:'masonry',embodiedCarbonA1A5:720,responsiblySourcedMaterials:true,suds:true,biodiversityNetGainPct:12,affordableHousingPct:35,cycleStorage:true,parkingSpaces:0,evChargePoint:false,targetCertifications:['breeam','well','wiredscore-home']},
+ 'noncompliant-refurb':{name:'Poor refurbishment (non-compliant example)',projectType:'major-refurbishment',builtForm:'mid-terrace',uWall:.45,uRoof:.25,uFloor:.3,uWindow:2.2,airPermeability:12,glazingRatio:.28,heatingSystem:'gas-boiler',ventilationSystem:'natural',waterUseLpd:145,pvKwp:0,evChargePoint:false,gigabitInfrastructure:false,gigabitConnection:false,pas24SecureDoors:false,daylightFactorAvg:1,embodiedCarbonA1A5:850,suds:false,biodiversityNetGainPct:0},
+};
+
+// ---------- input layout (discipline -> subcategory -> fields) ----------
+const CONTEXT=[['name','Project name','text'],['reference','Reference','text'],['nation','Nation','select'],['region','Region','select'],['projectType','Project type','select'],['dwellingType','Dwelling type','select'],['builtForm','Built form','select'],['units','Number of dwellings','number'],['storeys','Storeys','number'],['topStoreyHeightM','Top storey height (m)','number']];
+const LAYOUT={
+ architecture:[
+   ['Wall & fabric build-up',[['uWall','Wall U-value (W/m²K)','number'],['uRoof','Roof U-value','number'],['uFloor','Floor U-value','number'],['uWindow','Window U-value','number'],['airPermeability','Air permeability (m³/h·m²)','number'],['thermalBridging','Thermal bridging (y)','number']]],
+   ['Glazing & overheating',[['glazingRatio','Glazing ratio (0–1)','number'],['solarShading','Solar shading','check'],['crossVentilation','Cross ventilation','check']]],
+   ['Space standards',[['gia','Gross internal area (m²)','number'],['bedrooms','Bedrooms','number'],['bedspaces','Bedspaces (persons)','number']]],
+   ['Accessibility, acoustics & security',[['accessibleM4_2','M4(2) accessible','check'],['wheelchairM4_3','M4(3) wheelchair','check'],['separatingSoundDnTw','Separating airborne (dB)','number'],['impactSoundLnTw','Separating impact (dB)','number'],['pas24SecureDoors','PAS 24 secure doors','check'],['daylightFactorAvg','Avg daylight factor (%)','number']]],
+ ],
+ mep:[
+   ['Heating & ventilation',[['heatingSystem','Heating system','select'],['ventilationSystem','Ventilation','select']]],
+   ['Water efficiency',[['waterUseLpd','Water use (L/p/day)','number'],['waterStressedArea','Water-stressed area','check'],['rainwaterHarvesting','Rainwater harvesting','check'],['greywaterReuse','Greywater reuse','check']]],
+   ['Renewables & electrical',[['pvKwp','Solar PV (kWp)','number'],['batteryStorage','Battery storage','check']]],
+   ['EV & connectivity',[['parkingSpaces','Parking spaces','number'],['evChargePoint','EV charge point','check'],['gigabitInfrastructure','Gigabit infrastructure','check'],['gigabitConnection','Gigabit connection','check']]],
+ ],
+ structure:[
+   ['Structural system',[['primaryStructure','Primary structure','select']]],
+   ['Embodied carbon',[['embodiedCarbonA1A5','Embodied carbon A1–A5 (kgCO₂e/m²)','number'],['responsiblySourcedMaterials','Responsibly sourced','check'],['recycledContent','Recycled content','check']]],
+   ['Fire (driven by context: height, form, type)',[]],
+ ],
+ sustainability:[
+   ['Evidence & targets',[['sapEpcScore','Declared SAP/EPC score (optional)','number']]],
+   ['Aspirational certifications (resi-gated)',[['__certs','certs','certs']]],
+ ],
+ planning:[
+   ['Ecology & drainage',[['biodiversityNetGainPct','Biodiversity Net Gain (%)','number'],['suds','Sustainable drainage','check']]],
+   ['Housing & transport',[['affordableHousingPct','Affordable housing (%)','number'],['cycleStorage','Cycle storage','check']]],
+ ],
+};
+const SCHEME_IDS=SCHEMES.map(s=>s.id);
+
+// ---------- build form ----------
+function fieldEl(key,label,type,value){
+  if(type==='certs'){
+    const w=document.createElement('div');w.className='grid2';w.style.gridColumn='1 / -1';
+    const tgt=new Set(value||[]);
+    w.innerHTML=SCHEME_IDS.map(id=>`<div class="field check"><input type="checkbox" id="f_${id}" data-cert="${id}" ${tgt.has(id)?'checked':''}/><label for="f_${id}">${esc(titleCase(id))}</label></div>`).join('');
+    return w;
+  }
+  const w=document.createElement('div');
+  if(type==='check'){w.className='field check';w.innerHTML=`<input type="checkbox" id="f_${key}" data-key="${key}" ${value?'checked':''}/><label for="f_${key}">${esc(label)}</label>`;return w;}
+  w.className='field';
+  if(type==='select'){const o=(OPT[key]||[]).map(x=>`<option value="${x}" ${x===value?'selected':''}>${esc(titleCase(x))}</option>`).join('');w.innerHTML=`<label for="f_${key}">${esc(label)}</label><select id="f_${key}" data-key="${key}">${o}</select>`;}
+  else{const t=type==='number'?'number':'text',step=type==='number'?'step="any"':'',v=value==null?'':value;w.innerHTML=`<label for="f_${key}">${esc(label)}</label><input type="${t}" ${step} id="f_${key}" data-key="${key}" value="${esc(v)}"/>`;}
+  return w;
+}
+function subboxEl(title,fields,vals){
+  const b=document.createElement('div');b.className='subbox';
+  b.innerHTML=`<div class="sbtitle">${esc(title)}</div>`;
+  if(!fields.length){b.innerHTML+=`<p class="muted" style="font-size:12px;margin:4px 0">No direct inputs — assessed from the project context above.</p>`;return b;}
+  const g=document.createElement('div');g.className='grid2';
+  for(const[k,l,t]of fields)g.appendChild(fieldEl(k,l,t,k==='__certs'?vals.targetCertifications:vals[k]));
+  b.appendChild(g);return b;
+}
+function buildUI(vals){
+  const main=document.getElementById('main');main.innerHTML='';
+  // context card
+  const ctx=document.createElement('section');ctx.className='card';ctx.id='card-context';
+  ctx.innerHTML=`<header data-toggle><span class="hi">🏠</span><div><h2>Project context</h2><div class="hsub">Shared parameters used across all disciplines</div></div><span class="hrank"><span class="caret">▾</span></span></header>`;
+  const cbody=document.createElement('div');cbody.className='body';cbody.style.gridTemplateColumns='1fr';
+  const cin=document.createElement('div');cin.className='inputs';cin.style.borderRight='none';
+  const cgrid=document.createElement('div');cgrid.className='grid2';
+  for(const[k,l,t]of CONTEXT)cgrid.appendChild(fieldEl(k,l,t,vals[k]));
+  cin.appendChild(cgrid);cbody.appendChild(cin);ctx.appendChild(cbody);main.appendChild(ctx);
+  // discipline cards
+  for(const d of DISCIPLINES){
+    const card=document.createElement('section');card.className='card';card.id='card-'+d.id;
+    card.innerHTML=`<header data-toggle><span class="hi">${d.icon}</span><div><h2>${esc(d.name)}</h2><div class="hsub">${esc(d.blurb)}</div></div>
+      <span class="hrank" id="rank-${d.id}"></span><span class="caret" style="margin-left:8px">▾</span></header>`;
+    const body=document.createElement('div');body.className='body';
+    const inp=document.createElement('div');inp.className='inputs';
+    for(const[title,fields]of LAYOUT[d.id])inp.appendChild(subboxEl(title,fields,vals));
+    const res=document.createElement('div');res.className='results';res.innerHTML=`<div id="rankhead-${d.id}"></div><ul class="findings" id="findings-${d.id}"></ul>`;
+    body.appendChild(inp);body.appendChild(res);card.appendChild(body);main.appendChild(card);
+  }
+  // wire collapse + inputs
+  main.querySelectorAll('[data-toggle]').forEach(h=>h.addEventListener('click',()=>h.parentElement.classList.toggle('collapsed')));
+  main.querySelectorAll('[data-key],[data-cert]').forEach(el=>{el.addEventListener('input',recompute);el.addEventListener('change',recompute);});
+}
+function readForm(){
+  const out={};
+  for(const el of document.querySelectorAll('[data-key]')){const k=el.dataset.key;if(el.type==='checkbox')out[k]=el.checked;else if(el.type==='number')out[k]=el.value===''?null:Number(el.value);else out[k]=el.value;}
+  out.targetCertifications=[...document.querySelectorAll('[data-cert]')].filter(e=>e.checked).map(e=>e.dataset.cert);
+  return out;
+}
+
+// ---------- render outputs ----------
+const sbar=(v,color)=>`<div class="mbtrack"><div class="mbfill" style="width:${clamp(v,0,100)}%;background:${color}"></div></div>`;
+function fItem(f){return`<li class="finding ${f.status}"><div class="ftitle"><span>${esc(f.title)}${f.gate?'<span class="gatebadge">gate</span>':''}</span><span class="status-tag ${f.status}">${f.status.replace('-',' ')}</span></div><p class="fdetail">${esc(f.detail)}</p>${f.requirement?`<p class="fmeta">Req: ${esc(f.requirement)}</p>`:''}${f.recommendation?`<p class="frec">➤ ${esc(f.recommendation)}</p>`:''}${f.reference?`<p class="fmeta">Ref: ${esc(f.reference)}</p>`:''}</li>`;}
+function renderRankHead(d,r){
+  const counts=`${r.counts.pass} pass · ${r.counts.warning} warning · ${r.counts.fail} fail`;
+  return`<div class="rankhead"><div class="big band-${r.band}">${r.gateFail?'✕':(r.band==='x'?'—':r.band)}</div>
+    <div class="rmeta"><div class="rt">${esc(d.name)} — ${r.gateFail?'Non-compliant':(r.score==null?'n/a':r.label+' ('+r.score+'%)')}</div>
+    <div class="rs">${counts}${r.gateFail?' — a gated Building-Reg check is failing':''}</div></div></div>`;
+}
+function render(rep){
+  // summary strip
+  const sum=document.getElementById('summary');
+  const chips=DISCIPLINES.map(d=>{const r=rep.ranks[d.id];return`<div class="chip" data-jump="${d.id}"><span class="ci">${d.icon}</span>
+    <span class="cmeta"><span class="cname">${esc(d.name.split(' (')[0])}</span><span class="cband">${r.gateFail?'Non-compliant':(r.score==null?'—':'Band '+r.band)}</span></span>
+    <span class="rankdot band-${r.band}">${r.gateFail?'✕':(r.band==='x'?'—':r.band)}</span></div>`;}).join('');
+  sum.innerHTML=`<div class="ov-card"><span class="k">Building Regs</span><span class="v" style="color:${rep.compliant?'var(--pass)':'var(--fail)'}">${rep.compliant?'✅ Compliant':'❌ '+rep.gateFails.length+' gate fail'+(rep.gateFails.length>1?'s':'')}</span></div>
+    <div class="ov-card"><span class="k">Overall readiness</span><span class="v"><span class="rankdot band-${rep.band}" style="display:inline-grid;width:26px;height:26px;vertical-align:middle">${rep.compliant?rep.band:'✕'}</span> ${rep.compliant?rep.readiness+'%':'blocked'}</span></div>
+    <div class="ov-card"><span class="k">EPC · EDGE</span><span class="v">${rep.epc.band} · ${rep.edge.tier}</span></div>
+    <div class="chips">${chips}</div>`;
+  sum.querySelectorAll('[data-jump]').forEach(c=>c.addEventListener('click',()=>{const card=document.getElementById('card-'+c.dataset.jump);card.classList.remove('collapsed');card.scrollIntoView({behavior:'smooth',block:'start'});}));
+  // per-discipline
+  for(const d of DISCIPLINES){
+    const r=rep.ranks[d.id];
+    document.getElementById('rank-'+d.id).innerHTML=`<span class="pill ${r.counts.fail?'fail':r.counts.warning?'warn':'pass'}">${r.gateFail?'Non-compliant':(r.score==null?'n/a':r.band+' · '+r.score+'%')}</span>`;
+    let head=renderRankHead(d,r);
+    if(d.id==='sustainability'){const e=rep.edge.pillars;head+=`<div class="minibars">
+      <div class="mb"><span>Energy</span>${sbar(e.energy.saving,e.energy.saving>=20?'var(--accent)':'var(--warn)')}<span>${e.energy.saving}%</span></div>
+      <div class="mb"><span>Water</span>${sbar(e.water.saving,e.water.saving>=20?'var(--accent)':'var(--warn)')}<span>${e.water.saving}%</span></div>
+      <div class="mb"><span>Materials</span>${sbar(e.materials.saving,e.materials.saving>=20?'var(--accent)':'var(--warn)')}<span>${e.materials.saving}%</span></div></div>
+      <p class="muted" style="font-size:12px">Applicable schemes: ${rep.certs.app.map(esc).join(', ')}.<span class="na-list">${rep.certs.na.map(n=>`<span class="na-pill">${esc(n)} — N/A</span>`).join('')}</span></p>`;}
+    document.getElementById('rankhead-'+d.id).innerHTML=head;
+    document.getElementById('findings-'+d.id).innerHTML=rep.disc[d.id].map(fItem).join('');
+  }
+}
+function recompute(){render(assess(readForm()));}
+
+// ---------- boot ----------
+const DEFAULTS=defaultProject();
+buildUI(DEFAULTS);
+const sel=document.getElementById('sample');
+sel.innerHTML='<option value="">— load an example —</option>'+Object.entries(SAMPLES).map(([k,v])=>`<option value="${k}">${esc(v.name||k)}</option>`).join('');
+sel.addEventListener('change',()=>{if(SAMPLES[sel.value]){buildUI({...DEFAULTS,...SAMPLES[sel.value]});recompute();}});
+document.getElementById('expandAll').addEventListener('click',()=>document.querySelectorAll('.card').forEach(c=>c.classList.remove('collapsed')));
+document.getElementById('collapseAll').addEventListener('click',()=>document.querySelectorAll('.card').forEach(c=>c.classList.add('collapsed')));
+document.getElementById('disclaimer').textContent='ResiCert Studio — indicative discipline-based pre-assessment for early design & education. Each check is attributed to the stakeholder discipline responsible; "gate" checks are mandatory Building-Regs items whose failure blocks compliance. Not a SAP/EPC calc, Building Control sign-off, or formal certification. Verify against current local requirements.';
+recompute();
+</script>
+</body>
+</html>
