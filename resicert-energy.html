@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ResiCert Energy — stage-aware SAP / Home Energy Model calculator</title>
+<style>
+:root{--bg:#0f1419;--panel:#161c24;--panel-2:#1d2530;--panel-3:#222c38;--line:#2a3440;--ink:#e7edf3;--muted:#9fb0c0;
+--accent:#2f9e5e;--accent-2:#36b3ff;--warn:#e0a32e;--fail:#e0563f;--pass:#2f9e5e;--radius:10px;--shadow:0 6px 24px rgba(0,0,0,.28);}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.muted{color:var(--muted)}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.topbar{padding:14px 22px;background:linear-gradient(180deg,#18202b,#131922);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+.topline{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}.logo{font-size:28px}
+.topbar h1{font-size:18px;margin:0}.tagline{margin:0;font-size:12px;color:var(--muted)}
+.topbar-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+select,input,button{font:inherit;color:var(--ink);background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:7px 9px}
+button.ghost{cursor:pointer}button.ghost:hover{filter:brightness(1.1)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:none;border-radius:0;background:var(--panel-2);cursor:pointer;padding:7px 12px;font-size:13px}
+.seg button.on{background:var(--accent);color:#fff}
+.ribawrap{margin-top:12px}.riba{display:flex;gap:6px}
+.step{flex:1;cursor:pointer;border:1px solid var(--line);background:var(--panel-2);border-radius:8px;padding:7px 5px;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
+.step:hover{border-color:var(--accent-2)}
+.step .snum{width:23px;height:23px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:12px;background:#243040;color:var(--muted)}
+.step .sname{font-size:10px;color:var(--muted);text-align:center;line-height:1.05}
+.step.done .snum{background:#1c3a29;color:#bff3d2}.step.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.step.on .snum{background:var(--accent);color:#fff}.step.on .sname{color:var(--ink)}
+@media(max-width:760px){.step .sname{display:none}}
+.stagecard{margin-top:9px;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:13px}
+.summary{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.ov{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:8px 13px;min-width:140px;display:flex;flex-direction:column;justify-content:center}
+.ov .k{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}.ov .v{font-size:17px;font-weight:700}
+.gauge{height:7px;background:#243040;border-radius:5px;overflow:hidden;margin-top:5px;position:relative;width:170px}
+.gfill{height:100%;background:linear-gradient(90deg,var(--accent-2),var(--accent))}
+.gmark{position:absolute;top:-3px;width:2px;height:13px;background:#fff}
+main{max-width:1400px;margin:0 auto;padding:16px 22px;display:grid;grid-template-columns:1.15fr .85fr;gap:16px;align-items:start}
+@media(max-width:1040px){main{grid-template-columns:1fr}}
+.col{display:grid;gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.card>header{display:flex;align-items:center;gap:10px;padding:11px 15px;background:var(--panel-3);cursor:pointer;border-bottom:1px solid var(--line)}
+.card>header .hi{font-size:19px}.card>header h2{font-size:15px;margin:0}.card>header .hsub{font-size:11.5px;color:var(--muted)}
+.card>header .right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.srcpill{font-size:10px;border-radius:999px;padding:1px 8px;border:1px solid var(--line);white-space:nowrap}
+.srcpill.sample{background:#2a2433;color:#d9c7ef}.srcpill.uvalue{background:#26313c;color:#cdd9e4}.srcpill.buildup{background:#1c3a29;color:#bff3d2}.srcpill.test{background:#143a44;color:#aee9f5}
+.body{padding:12px 15px}.collapsed .body{display:none}.caret{transition:transform .15s}.collapsed .caret{transform:rotate(-90deg)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px}@media(max-width:480px){.grid2{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:3px;margin:5px 0}.field label{font-size:12px;color:var(--muted)}
+.field input,.field select{width:100%}.field.check{flex-direction:row;align-items:center;gap:8px}.field.check label{font-size:13px;color:var(--ink)}.field.check input{width:auto}
+.uread{display:flex;align-items:baseline;gap:8px;margin:6px 0;padding:7px 10px;border:1px dashed var(--line);border-radius:8px;background:var(--panel-2)}
+.uread .uv{font-size:18px;font-weight:800}.uread .ul{font-size:11px;color:var(--muted)}
+.uread .verdict{margin-left:auto;font-size:11px;padding:1px 8px;border-radius:999px}
+.verdict.ok{background:#1c3a29;color:#bff3d2}.verdict.no{background:#3a201c;color:#f4c2b8}.verdict.na{background:#26313c;color:#9fb0c0}
+.layers{margin:6px 0}
+.lrow{display:grid;grid-template-columns:1fr 70px 56px 28px;gap:6px;align-items:center;margin:4px 0}
+.lrow input,.lrow select{padding:5px 7px;font-size:12.5px}
+.lrow .rcell{font-size:11px;color:var(--muted);text-align:right}
+.lrow .del{cursor:pointer;border:1px solid var(--line);border-radius:6px;text-align:center;padding:4px 0;background:var(--panel-2)}
+.lhdr{display:grid;grid-template-columns:1fr 70px 56px 28px;gap:6px;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:4px}
+.addlayer{cursor:pointer;font-size:12px;border:1px dashed var(--line);border-radius:7px;padding:5px;text-align:center;margin-top:4px;background:var(--panel-2)}
+.note{font-size:11.5px;color:var(--muted);margin:4px 0}
+/* results */
+.res-verdict{display:flex;align-items:center;gap:14px;padding:14px;border-radius:12px;background:radial-gradient(120% 140% at 0% 0%,#1f2a36,#161d27);border:1px solid var(--line);margin-bottom:10px}
+.epcbig{width:64px;height:64px;border-radius:12px;display:grid;place-items:center;font-size:30px;font-weight:800}
+.epc-A{background:#00855a;color:#fff}.epc-B{background:#19b459}.epc-C{background:#8dce46;color:#06210f}.epc-D{background:#ffd500;color:#06210f}.epc-E{background:#fcaa65;color:#06210f}.epc-F{background:#ef8023;color:#fff}.epc-G{background:#e9153b;color:#fff}
+.res-verdict h3{margin:0 0 3px;font-size:18px}
+.badge{display:inline-block;font-size:12px;font-weight:600;border-radius:999px;padding:2px 10px;border:1px solid var(--line)}
+.badge.ok{background:#20402e;border-color:#2f6e48;color:#bff3d2}.badge.no{background:#3a201c;border-color:#6e352f;color:#f4c2b8}.badge.prov{background:#2a2433;border-color:#5a4a72;color:#d9c7ef}
+.metric{display:grid;grid-template-columns:1fr auto auto auto;gap:6px 10px;align-items:center;font-size:13px;margin:4px 0;padding:6px 0;border-bottom:1px solid var(--line)}
+.metric .mn{color:var(--muted);font-size:12px}.metric .mv{font-weight:700;text-align:right}.metric .mt{text-align:right;color:var(--muted)}
+.metric .mok{font-size:11px;padding:1px 8px;border-radius:999px}
+.mok.pass{background:#1c3a29;color:#bff3d2}.mok.fail{background:#3a201c;color:#f4c2b8}.mok.na{background:#26313c;color:#9fb0c0}
+h4.sec{margin:16px 0 6px;font-size:13px;border-bottom:1px solid var(--line);padding-bottom:5px;color:var(--accent-2);text-transform:uppercase;letter-spacing:.5px}
+.bars{display:grid;gap:6px}.bar{display:grid;grid-template-columns:120px 1fr 86px;gap:8px;align-items:center;font-size:12px}
+.btrack{height:14px;background:#243040;border-radius:6px;overflow:hidden;position:relative}.bfill{height:100%}
+.btgt{position:absolute;top:-2px;width:2px;height:18px;background:#fff}
+.complist{list-style:none;margin:6px 0;padding:0;display:grid;gap:5px}
+.ci{display:flex;gap:8px;align-items:baseline;font-size:12.5px;border:1px solid var(--line);border-left-width:4px;border-radius:8px;padding:7px 10px;background:var(--panel-2)}
+.ci.pass{border-left-color:var(--pass)}.ci.fail{border-left-color:var(--fail)}.ci.warning{border-left-color:var(--warn)}.ci.na{border-left-color:#3a4654;opacity:.85}
+.ci .t{font-weight:600}.ci .d{color:var(--muted)}
+.sitefoot{max-width:1400px;margin:0 auto;padding:6px 22px 26px}.sitefoot p{font-size:12px;color:var(--muted)}
+.resultcard{position:sticky;top:188px}
+@media(max-width:1040px){.resultcard{position:static}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topline">
+    <div class="brand"><span class="logo">⚡</span>
+      <div><h1>ResiCert Energy</h1><p class="tagline">RIBA stage-aware SAP / Home Energy Model calculator — U-values from build-ups, live Part L compliance</p></div>
+    </div>
+    <div class="topbar-actions">
+      <span class="seg" id="method"><button data-m="sap" class="on">SAP 10.2 (Part L 2021)</button><button data-m="hem">Home Energy Model (FHS)</button></span>
+      <label for="sample" class="sr-only">Load example</label>
+      <select id="sample" title="Load an example"></select>
+    </div>
+  </div>
+  <div class="ribawrap"><div class="riba" id="riba"></div><div class="stagecard" id="stagecard"></div></div>
+  <div class="summary" id="summary"></div>
+</header>
+<main>
+  <div class="col" id="inputs"></div>
+  <div class="col"><section class="card resultcard" id="resultcard"><header><span class="hi">📊</span><div><h2>Energy assessment & Part L compliance</h2><div class="hsub" id="resmethod"></div></div></header><div class="body" id="results"></div></section></div>
+</main>
+<footer class="sitefoot"><p id="disclaimer"></p></footer>
+
+<script type="module">
+/* ============================================================================
+   ResiCert Energy — standalone, single-file, energy/SAP-focused.
+   - Each fabric element resolves to a U-value from a BUILD-UP (layers × λ), a
+     directly-entered U-VALUE, or a stage SAMPLE; the resolved value drives both
+     the calculation and the compliance check.
+   - Thermal bridging from a y-value or a junction (ψ·L) table.
+   - Methodology: SAP 10.2 (Part L 2021) or the Home Energy Model (Future Homes
+     Standard). Baseline: Part L NOTIONAL dwelling for new build; the existing-
+     dwelling reference + elemental U-value standards for refurbishment.
+   - RIBA stage controls expected input completeness: samples fill gaps early;
+     ~100% as-designed inputs by Stage 4; as-built (air test) at Stage 5–6.
+   INDICATIVE only — a transparent teaching model, NOT accredited SAP/HEM software
+   or an EPC. Numbers must not be used for a Building Regs submission.
+   ========================================================================== */
+
+// ---------- helpers ----------
+const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
+const round=(n,dp=1)=>{const f=10**dp;return Math.round((n+Number.EPSILON)*f)/f;};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const epcBand=s=>s>=92?'A':s>=81?'B':s>=69?'C':s>=55?'D':s>=39?'E':s>=21?'F':'G';
+const getP=(o,p)=>p.split('.').reduce((a,k)=>(a==null?a:a[k]),o);
+const setP=(o,p,v)=>{const ks=p.split('.'),last=ks.pop();let t=o;for(const k of ks)t=t[k];t[last]=v;};
+
+// ---------- RIBA stages (SAP framing) ----------
+const RIBA=[
+ {n:0,name:'Strategic Definition',sap:'Pre-SAP — strategic energy targets only (no calculation yet).',exp:0},
+ {n:1,name:'Preparation & Briefing',sap:'Energy strategy & aspirations; benchmark assumptions.',exp:10},
+ {n:2,name:'Concept Design',sap:'Concept SAP — elemental U-value targets; many inputs still sampled.',exp:40},
+ {n:3,name:'Spatial Coordination',sap:'Design-stage SAP — fabric & systems firming up for the planning application.',exp:70},
+ {n:4,name:'Technical Design',sap:'As-designed SAP — 100% of inputs defined; Part L compliance submission.',exp:100},
+ {n:5,name:'Manufacturing & Construction',sap:'As-built SAP — site evidence: air-test result & as-installed systems.',exp:100},
+ {n:6,name:'Handover',sap:'As-built EPC lodged from the final as-built SAP.',exp:100},
+];
+
+// ---------- material library (λ, W/m·K) ----------
+const MAT={
+ 'brick-outer':{n:'Brick, outer leaf',l:0.77},'brick-eng':{n:'Brick, engineering',l:1.20},
+ 'block-dense':{n:'Blockwork, dense',l:1.13},'block-medium':{n:'Blockwork, medium',l:0.51},'block-aircrete':{n:'Blockwork, aircrete',l:0.15},
+ 'concrete-dense':{n:'Concrete, dense',l:2.00},'concrete-medium':{n:'Concrete, medium',l:1.13},
+ 'mineral-wool':{n:'Mineral wool',l:0.035},'glass-wool':{n:'Glass wool',l:0.040},
+ 'pir':{n:'PIR / PUR board',l:0.022},'phenolic':{n:'Phenolic board',l:0.020},'eps':{n:'EPS',l:0.036},'xps':{n:'XPS',l:0.034},
+ 'wood-fibre':{n:'Wood fibre',l:0.040},'cellulose':{n:'Cellulose',l:0.038},'sheeps-wool':{n:"Sheep's wool",l:0.039},
+ 'plasterboard':{n:'Plasterboard',l:0.21},'gypsum-plaster':{n:'Gypsum plaster',l:0.57},'cement-render':{n:'Cement render',l:0.57},
+ 'osb':{n:'OSB',l:0.13},'plywood':{n:'Plywood',l:0.13},'softwood':{n:'Softwood / studwork',l:0.13},'clt':{n:'CLT panel',l:0.13},
+ 'screed':{n:'Screed',l:1.15},'air-cavity':{n:'Air cavity (unventilated)',l:null,R:0.18},
+};
+const MAT_OPTS=Object.entries(MAT).map(([k,v])=>`<option value="${k}">${esc(v.n)}</option>`).join('');
+/* surface resistances (Rsi, Rse) by element, m²K/W */
+const RS={wall:{si:0.13,se:0.04},roof:{si:0.10,se:0.04},floor:{si:0.17,se:0.04}};
+function uFromLayers(layers,el){
+  const sr=RS[el]||RS.wall;let R=sr.si+sr.se;
+  for(const L of layers){const m=MAT[L.material];if(!m){R+=(Number(L.thickness)||0)/1000/(Number(L.lambda)||1);continue;}
+    if(m.R!=null)R+=m.R;else R+=(Number(L.thickness)||0)/1000/m.l;}
+  if(el==='floor')R+=0.20; // simplified ground-contact allowance (real U also depends on P/A)
+  return R>0?1/R:0;
+}
+/* junction library: ψ (W/m·K) defaults — 'default' (no ACDs), 'acd' (accredited), 'best' (enhanced) */
+const JUNC={
+ 'lintel':{n:'Lintel over opening',def:0.50,acd:0.30,best:0.06},
+ 'jamb':{n:'Window/door jamb',def:0.10,acd:0.05,best:0.02},
+ 'sill':{n:'Window sill',def:0.08,acd:0.04,best:0.02},
+ 'ground-floor':{n:'Ground floor / wall',def:0.16,acd:0.08,best:0.04},
+ 'eaves':{n:'Eaves (wall / roof)',def:0.12,acd:0.06,best:0.03},
+ 'corner':{n:'External corner',def:0.18,acd:0.09,best:0.04},
+ 'party-floor':{n:'Intermediate / party floor',def:0.14,acd:0.07,best:0.03},
+};
+const JUNC_OPTS=Object.entries(JUNC).map(([k,v])=>`<option value="${k}">${esc(v.n)}</option>`).join('');
+
+// ---------- the working spec ----------
+function blankElement(el,sampleU){return{mode:'sample',u:sampleU,layers:[],el};}
+function defaultSpec(){return{
+  name:'Untitled dwelling',projectType:'new-build',region:'south-east',dwellingType:'house',builtForm:'semi-detached',
+  storeys:2,gia:93,glazingRatio:0.22,topStoreyHeightM:5,
+  // Default opens with the two flagship calculators active (walls built up from
+  // layers, bridging from junctions) so they're visible immediately; roof,
+  // floor and airtightness start as stage SAMPLES to demonstrate how undefined
+  // inputs are filled early and firmed up as the RIBA stages progress.
+  walls:{mode:'buildup',u:0.18,el:'wall',layers:[
+     {material:'cement-render',thickness:20},{material:'block-medium',thickness:100},{material:'pir',thickness:100},{material:'block-medium',thickness:100},{material:'gypsum-plaster',thickness:13}]},
+  roof:{mode:'sample',u:0.13,el:'roof',layers:[{material:'mineral-wool',thickness:300},{material:'plasterboard',thickness:13}]},
+  floor:{mode:'sample',u:0.13,el:'floor',layers:[{material:'concrete-dense',thickness:150},{material:'pir',thickness:120},{material:'screed',thickness:65}]},
+  windows:{mode:'uvalue',u:1.4,g:0.63,frame:0.7},
+  doors:{mode:'sample',u:1.4},
+  bridging:{mode:'junctions',y:0.15,junctions:[{type:'lintel',length:8,grade:'acd'},{type:'jamb',length:24,grade:'acd'},{type:'ground-floor',length:18,grade:'acd'},{type:'eaves',length:14,grade:'acd'}]},
+  airtightness:{mode:'sample',q50:5,test:null},
+  heating:{system:'gas-boiler',controls:'programmer-trv-thermostat'},
+  hotwater:{cylinder:true,waste:false,solarThermal:false},
+  ventilation:{type:'natural',mvhrEff:0.88},
+  lighting:{lowEnergyPct:80},
+  pv:{kwp:0,overshade:'none'},battery:false,
+};}
+
+// ---------- geometry ----------
+const EXPF={detached:1,'semi-detached':.75,'end-terrace':.7,'mid-terrace':.55,'apartment-block':.5};
+const SHt=2.4;
+function areas(s){
+  const fp=s.gia/Math.max(1,s.storeys),side=Math.sqrt(Math.max(1,fp)),perim=4*side,exp=EXPF[s.builtForm]??.8;
+  const grossWall=perim*SHt*s.storeys*exp,win=clamp(s.glazingRatio,0,.9)*s.gia,door=Math.min(7,3.8);
+  const wall=Math.max(0,grossWall-win-door);
+  const deck=s.builtForm==='apartment-block'?.4:1,roof=fp*deck,floor=fp*deck;
+  return{fp,wall,win,door,roof,floor,exposed:wall+win+door+roof+floor,perim};
+}
+// SAP occupancy from total floor area
+function sapOccupancy(tfa){return tfa<=13.9?1:1+1.76*(1-Math.exp(-0.000349*(tfa-13.9)**2))+0.0013*(tfa-13.9);}
+
+// ---------- resolve U-values (build-up / u / sample) ----------
+function resolveU(el,sampleU){
+  if(el.mode==='buildup')return{u:round(uFromLayers(el.layers,el.el),3),src:'buildup'};
+  if(el.mode==='uvalue')return{u:Number(el.u)||sampleU,src:'uvalue'};
+  return{u:sampleU,src:'sample'};
+}
+function resolveY(b){
+  if(b.mode==='junctions'){const A=null;return{y:null,calc:true};} // computed against area later
+  if(b.mode==='yvalue')return{y:Number(b.y)||0.15,calc:false};
+  return{y:0.15,calc:false};
+}
+function yFromJunctions(junc,exposedArea){
+  let sum=0;for(const j of junc){const def=JUNC[j.type];if(!def)continue;const psi=def[j.grade]??def.acd;sum+=psi*(Number(j.length)||0);}
+  return exposedArea>0?sum/exposedArea:0.15;
+}
+
+// ---------- methodology factors ----------
+const FACT={
+ sap:{label:'SAP 10.2 emission/primary factors (Part L 2021)',elec:{co2:0.136,pe:1.501,cost:0.27},gas:{co2:0.210,pe:1.130,cost:0.07},biomass:{co2:0.029,pe:1.100,cost:0.06},'heat-network':{co2:0.150,pe:1.300,cost:0.08}},
+ hem:{label:'Home Energy Model factors (Future Homes Standard, illustrative)',elec:{co2:0.100,pe:1.300,cost:0.27},gas:{co2:0.210,pe:1.200,cost:0.07},biomass:{co2:0.029,pe:1.100,cost:0.06},'heat-network':{co2:0.120,pe:1.250,cost:0.08}},
+};
+const HEFF={'gas-boiler':0.90,ashp:3.0,gshp:3.8,'direct-electric':1.0,'hydrogen-ready':0.90,'heat-network':1.0,biomass:0.85};
+const HFUEL={'gas-boiler':'gas',ashp:'elec',gshp:'elec','direct-electric':'elec','hydrogen-ready':'gas','heat-network':'heat-network',biomass:'biomass'};
+const MVHR={mvhr:0.88,mev:0,dev:0,natural:0};
+const HDD={london:2030,'south-east':2100,'south-west':2050,east:2200,'east-midlands':2300,'west-midlands':2300,yorkshire:2400,'north-west':2350,'north-east':2450,wales:2250,scotland:2650,'northern-ireland':2400};
+const PVY={london:950,'south-east':980,'south-west':1000,east:970,'east-midlands':920,'west-midlands':910,yorkshire:880,'north-west':870,'north-east':860,wales:900,scotland:820,'northern-ireland':850};
+const OVERSHADE={none:1,modest:0.9,significant:0.75};
+
+// ---------- core energy calculation ----------
+function calc(s,U,method){
+  const A=areas(s),fac=FACT[method];
+  const htcFab=U.wall*A.wall+U.roof*A.roof+U.floor*A.floor+U.window*A.win+U.door*A.door+U.y*A.exposed;
+  const vol=s.gia*SHt,infil=U.q50/20,rec=MVHR[s.ventilation.type]??0,designedVent=0.5*(1-rec),ach=infil+designedVent;
+  const htcVent=0.33*ach*vol,hlc=htcFab+htcVent;
+  const grossSH=hlc*HDD[s.region]*24/1000,util=clamp(0.80-s.glazingRatio*0.1,0.6,0.85),spaceHeat=Math.max(0,grossSH*util);
+  const fee=spaceHeat/s.gia; // fabric energy efficiency, kWh/m²·yr
+  const N=sapOccupancy(s.gia),Vd=25*N+36,dhw=Vd*0.001163*33*365*1.18/1; // useful DHW kWh/yr (+18% losses)
+  const eff=HEFF[s.heating.system]??1,fuel=HFUEL[s.heating.system]??'elec';
+  const delHeat=(spaceHeat+dhw)/eff;
+  const light=s.gia*4.2*(1-0.45*clamp(s.lighting.lowEnergyPct,0,100)/100);
+  const aux=s.ventilation.type==='mvhr'?s.gia*2.4:s.ventilation.type==='mev'?s.gia*1.0:s.gia*0.3;
+  const pvGen=(s.pv.kwp||0)*(PVY[s.region]??900)*(OVERSHADE[s.pv.overshade]??1);
+  let elec=light+aux,gas=0,other=0,oFuel='elec';
+  if(fuel==='elec')elec+=delHeat;else if(fuel==='gas')gas+=delHeat;else{other+=delHeat;oFuel=fuel;}
+  const selfUse=Math.min(elec,pvGen*0.6),exported=Math.max(0,pvGen-selfUse),netE=Math.max(0,elec-selfUse);
+  const ef=fac.elec,gf=fac.gas,of=fac[oFuel]||fac.elec;
+  const co2=(netE*ef.co2+gas*gf.co2+other*of.co2-exported*ef.co2)/s.gia;
+  const prim=(netE*ef.pe+gas*gf.pe+other*of.pe-exported*ef.pe)/s.gia;
+  const cost=(netE*ef.cost+gas*gf.cost+other*of.cost-exported*0.05)/s.gia;
+  const sap=clamp(Math.round(100-cost*6),1,100);
+  return{areas:A,htcFab:round(htcFab,1),htcVent:round(htcVent,1),hlc:round(hlc,1),spaceHeat:round(spaceHeat),
+    fee:round(fee,1),dhw:round(dhw),delHeat:round(delHeat),pvGen:round(pvGen),
+    co2:round(co2,1),prim:round(prim),cost:round(cost,2),sap,band:epcBand(sap),fuel};
+}
+
+// ---------- notional (new build) ----------
+function notionalU(method){
+  return method==='hem'
+   ?{wall:0.15,roof:0.11,floor:0.13,window:0.80,door:1.0,y:0.05,q50:5}
+   :{wall:0.18,roof:0.11,floor:0.13,window:1.20,door:1.0,y:0.05,q50:5};
+}
+function notionalSpec(s,method){
+  const ns=structuredClone(s);
+  ns.heating.system=method==='hem'?'ashp':'gas-boiler';
+  ns.ventilation.type=method==='hem'?'mev':s.ventilation.type;
+  ns.lighting.lowEnergyPct=100;
+  const fp=s.gia/Math.max(1,s.storeys);
+  ns.pv.kwp=method==='hem'?round(fp*0.045,2):round(fp*0.045,2); // notional PV allocation (kept modest so TER stays a small positive target)
+  ns.pv.overshade='none';
+  return ns;
+}
+// existing-dwelling reference (the refurbishment baseline) + elemental refurb standards
+const EXIST_REF={wall:1.6,roof:2.3,floor:0.70,window:4.8,door:3.0,y:0.15,q50:15};
+const REFURB_STD={wall:0.30,roof:0.16,floor:0.25,window:1.4,door:1.4}; // renovated thermal elements
+// limiting fabric standards (worst allowable) — new build
+const LIMIT={wall:0.26,roof:0.16,floor:0.18,window:1.6,q50:8};
+
+// ---------- assemble U set + compliance for a spec at a stage ----------
+function resolveAll(s,method,stage){
+  const nU=notionalU(method);
+  const w=resolveU(s.walls,nU.wall),r=resolveU(s.roof,nU.roof),fl=resolveU(s.floor,nU.floor);
+  const win=s.windows.mode==='uvalue'?{u:Number(s.windows.u)||nU.window,src:'uvalue'}:s.windows.mode==='buildup'?{u:nU.window,src:'uvalue'}:{u:nU.window,src:'sample'};
+  const dr=s.doors.mode==='uvalue'?{u:Number(s.doors.u)||nU.door,src:'uvalue'}:{u:nU.door,src:'sample'};
+  const A=areas(s);
+  let y,ySrc;
+  if(s.bridging.mode==='junctions'){y=round(yFromJunctions(s.bridging.junctions,A.exposed),3);ySrc='buildup';}
+  else if(s.bridging.mode==='yvalue'){y=Number(s.bridging.y)||0.15;ySrc='uvalue';}
+  else{y=0.15;ySrc='sample';}
+  let q50,qSrc;
+  if(s.airtightness.mode==='test'){q50=Number(s.airtightness.test)||Number(s.airtightness.q50)||5;qSrc='test';}
+  else if(s.airtightness.mode==='design'){q50=Number(s.airtightness.q50)||5;qSrc='uvalue';}
+  else{q50=5;qSrc='sample';}
+  const U={wall:w.u,roof:r.u,floor:fl.u,window:win.u,door:dr.u,y,q50};
+  const src={wall:w.src,roof:r.src,floor:fl.src,window:win.src,door:dr.src,bridging:ySrc,airtightness:qSrc};
+  return{U,src};
+}
+function assess(s,method,stage){
+  const {U,src}=resolveAll(s,method,stage);
+  const actual=calc(s,U,method);
+  const isNew=s.projectType==='new-build'||s.projectType==='change-of-use';
+  // input completeness: count designed (non-sample) key inputs
+  const keys=['wall','roof','floor','window','door','bridging','airtightness'];
+  const designed=keys.filter(k=>src[k]&&src[k]!=='sample').length;
+  // services count as designed if not default? treat heating+ventilation always 'set'
+  const completeness=Math.round((designed)/(keys.length)*100);
+  const expected=RIBA[stage].exp;
+  // compliance
+  const checks=[];let baseline=null,target=null;
+  if(isNew){
+    const nU=notionalU(method),nspec=notionalSpec(s,method);
+    target=calc(nspec,nU,method);baseline=target;
+    checks.push(cmp('DER ≤ TER (CO₂)',actual.co2,target.co2,'kgCO₂/m²·yr',true));
+    checks.push(cmp('DPER ≤ TPER (primary energy)',actual.prim,target.prim,'kWh/m²·yr',true));
+    checks.push(cmp('FEE ≤ TFEE (fabric energy efficiency)',actual.fee,target.fee,'kWh/m²·yr',true));
+    // limiting fabric
+    for(const[k,lim]of Object.entries(LIMIT)){const v=U[k];checks.push({title:'Limiting fabric — '+k,status:v<=lim?'pass':'fail',gate:true,detail:`${k==='q50'?'air permeability':'U-value'} ${round(v,k==='q50'?1:3)} ${k==='q50'?'m³/h·m²':'W/m²K'} vs limit ${lim}.`});}
+    if(method==='hem')checks.push({title:'Low-carbon heating (FHS)',status:['ashp','gshp','heat-network'].includes(s.heating.system)?'pass':'fail',gate:true,detail:'The Future Homes Standard expects low-carbon heating (no fossil fuels).'});
+  }else{
+    baseline=calc({...s,walls:fake(EXIST_REF.wall),roof:fake(EXIST_REF.roof),floor:fake(EXIST_REF.floor),windows:{mode:'uvalue',u:EXIST_REF.window,g:0.7},doors:{mode:'uvalue',u:EXIST_REF.door},bridging:{mode:'yvalue',y:EXIST_REF.y},airtightness:{mode:'design',q50:EXIST_REF.q50},heating:{system:'gas-boiler'},ventilation:{type:'natural'},lighting:{lowEnergyPct:30},pv:{kwp:0}},notionalU(method),method);
+    // elemental U-value standards for renovated/new thermal elements
+    for(const[k,std]of Object.entries(REFURB_STD)){const v=U[k];checks.push({title:'Renovated element U — '+k,status:v<=std?'pass':'fail',gate:true,detail:`U-value ${round(v,3)} W/m²K vs refurbishment standard ${std} (Part L1B).`});}
+    const impr=baseline.co2>0?round((baseline.co2-actual.co2)/baseline.co2*100):0;
+    checks.push({title:'Improvement vs existing baseline',status:impr>0?'pass':'warning',detail:`~${impr}% lower CO₂ than the existing-dwelling reference (${baseline.co2} → ${actual.co2} kgCO₂/m²·yr). Energy assessment guidance Appendix baseline for existing dwellings.`});
+  }
+  const gateFails=checks.filter(c=>c.gate&&c.status==='fail');
+  // stage scope: full Part L SAP compliance is a Stage 4 deliverable
+  const sapStage=stage>=5?'as-built':stage>=4?'as-designed':stage>=2?'design-indicative':'pre-sap';
+  const compliant=gateFails.length===0;
+  return{spec:s,method,stage,U,src,actual,baseline,target,checks,gateFails,compliant,completeness,expected,isNew,sapStage,N:round(sapOccupancy(s.gia),1)};
+}
+function fake(u){return{mode:'uvalue',u,el:'wall',layers:[]};}
+function cmp(title,act,tgt,unit,gate){const ok=act<=tgt+1e-9;return{title,status:ok?'pass':'fail',gate:!!gate,detail:`${round(act,unit.includes('kWh')&&!unit.includes('m²·yr')?0:1)} vs ${round(tgt,1)} ${unit}.`,act,tgt,unit};}
+
+// ---------- samples ----------
+const SAMPLES={
+ 'current-newbuild':{name:'Typical new-build house (mixed evidence)'},
+ 'fabric-first':{name:'Fabric-first all-electric house',builtForm:'detached',gia:120,region:'south-west',
+   walls:{mode:'buildup',el:'wall',layers:[{material:'cement-render',thickness:15},{material:'wood-fibre',thickness:120},{material:'clt',thickness:100},{material:'wood-fibre',thickness:60},{material:'gypsum-plaster',thickness:12}]},
+   roof:{mode:'buildup',el:'roof',layers:[{material:'cellulose',thickness:400},{material:'plasterboard',thickness:13}]},
+   floor:{mode:'buildup',el:'floor',layers:[{material:'concrete-dense',thickness:150},{material:'pir',thickness:150},{material:'screed',thickness:65}]},
+   windows:{mode:'uvalue',u:0.85,g:0.5,frame:0.7},doors:{mode:'uvalue',u:1.0},
+   bridging:{mode:'junctions',junctions:[{type:'lintel',length:8,grade:'best'},{type:'jamb',length:24,grade:'best'},{type:'ground-floor',length:16,grade:'best'},{type:'eaves',length:12,grade:'best'}]},
+   airtightness:{mode:'design',q50:1.5},heating:{system:'ashp'},ventilation:{type:'mvhr',mvhrEff:0.9},lighting:{lowEnergyPct:100},pv:{kwp:4,overshade:'none'}},
+ 'passivhaus':{name:'Passivhaus-level fabric',builtForm:'detached',gia:130,glazingRatio:0.18,
+   walls:{mode:'buildup',el:'wall',layers:[{material:'cement-render',thickness:15},{material:'eps',thickness:300},{material:'block-medium',thickness:140},{material:'gypsum-plaster',thickness:12}]},
+   roof:{mode:'buildup',el:'roof',layers:[{material:'mineral-wool',thickness:450},{material:'plasterboard',thickness:13}]},
+   floor:{mode:'buildup',el:'floor',layers:[{material:'concrete-dense',thickness:150},{material:'pir',thickness:200},{material:'screed',thickness:65}]},
+   windows:{mode:'uvalue',u:0.75,g:0.5,frame:0.7},doors:{mode:'uvalue',u:0.8},
+   bridging:{mode:'yvalue',y:0.04},airtightness:{mode:'test',test:0.6,q50:0.6},heating:{system:'ashp'},ventilation:{type:'mvhr',mvhrEff:0.92},lighting:{lowEnergyPct:100},pv:{kwp:5,overshade:'none'}},
+ 'solid-wall-refurb':{name:'Solid-wall refurbishment (existing)',projectType:'major-refurbishment',builtForm:'mid-terrace',gia:85,
+   walls:{mode:'buildup',el:'wall',layers:[{material:'brick-outer',thickness:220},{material:'wood-fibre',thickness:80},{material:'gypsum-plaster',thickness:12}]},
+   roof:{mode:'uvalue',u:0.16},floor:{mode:'uvalue',u:0.25},windows:{mode:'uvalue',u:1.4,g:0.6},doors:{mode:'uvalue',u:1.4},
+   bridging:{mode:'yvalue',y:0.1},airtightness:{mode:'design',q50:7},heating:{system:'ashp'},ventilation:{type:'mev'},lighting:{lowEnergyPct:90},pv:{kwp:2,overshade:'modest'}},
+ 'poor-newbuild':{name:'Under-specified new-build (fails)',builtForm:'mid-terrace',
+   walls:{mode:'uvalue',u:0.35},roof:{mode:'uvalue',u:0.25},floor:{mode:'uvalue',u:0.30},windows:{mode:'uvalue',u:2.0,g:0.7},doors:{mode:'uvalue',u:2.2},
+   bridging:{mode:'yvalue',y:0.2},airtightness:{mode:'design',q50:10},heating:{system:'gas-boiler'},ventilation:{type:'natural'},lighting:{lowEnergyPct:50},pv:{kwp:0,overshade:'none'}},
+};
+
+// ---------- state ----------
+let S=defaultSpec(),METHOD='sap',STAGE=2;
+const OPT={projectType:['new-build','major-refurbishment','change-of-use','extension'],region:Object.keys(HDD),dwellingType:['house','flat','maisonette','bungalow'],builtForm:['detached','semi-detached','mid-terrace','end-terrace','apartment-block'],heatingSystem:Object.keys(HEFF),ventilation:['natural','mev','dev','mvhr'],overshade:['none','modest','significant']};
+const titleCase=s=>String(s).replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+
+// ---------- input cards ----------
+function elementCard(key,icon,title,el){
+  return{key,icon,title,el};
+}
+const ELEMENT_CARDS=[
+ {key:'walls',icon:'🧱',title:'External walls',el:'wall',stage:4},
+ {key:'roof',icon:'🔺',title:'Roof / ceiling',el:'roof',stage:4},
+ {key:'floor',icon:'⬛',title:'Ground floor',el:'floor',stage:4},
+];
+function modeSelect(path,modes){const cur=getP(S,path);return `<select data-path="${path}" data-kind="mode">${modes.map(m=>`<option value="${m[0]}" ${cur===m[0]?'selected':''}>${m[1]}</option>`).join('')}</select>`;}
+
+function layerTable(key){
+  const el=S[key];
+  const rows=el.layers.map((L,i)=>`<div class="lrow"><select data-layer="${key}" data-i="${i}" data-f="material">${MAT_OPTS.replace(`value="${L.material}"`,`value="${L.material}" selected`)}</select>
+    <input type="number" step="any" data-layer="${key}" data-i="${i}" data-f="thickness" value="${L.thickness??''}" ${MAT[L.material]&&MAT[L.material].R!=null?'disabled placeholder="—"':''}/>
+    <span class="rcell" id="r-${key}-${i}"></span><div class="del" data-del="${key}" data-i="${i}">✕</div></div>`).join('');
+  return `<div class="lhdr"><span>Material (λ from library)</span><span>mm</span><span>R</span><span></span></div><div class="layers" id="layers-${key}">${rows}</div><div class="addlayer" data-add="${key}">+ add layer</div>`;
+}
+function buildInputs(){
+  const root=document.getElementById('inputs');root.innerHTML='';
+  // project & geometry
+  root.appendChild(cardEl('🏠','Project & geometry','Set the dwelling once — areas are derived from these',`
+    <div class="grid2">
+      <div class="field"><label>Project name</label><input type="text" data-path="name" value="${esc(S.name)}"/></div>
+      <div class="field"><label>Route</label><select data-path="projectType">${OPT.projectType.map(o=>`<option ${S.projectType===o?'selected':''}>${o}</option>`).join('')}</select></div>
+      <div class="field"><label>Region</label><select data-path="region">${OPT.region.map(o=>`<option ${S.region===o?'selected':''}>${o}</option>`).join('')}</select></div>
+      <div class="field"><label>Dwelling type</label><select data-path="dwellingType">${OPT.dwellingType.map(o=>`<option ${S.dwellingType===o?'selected':''}>${o}</option>`).join('')}</select></div>
+      <div class="field"><label>Built form</label><select data-path="builtForm">${OPT.builtForm.map(o=>`<option ${S.builtForm===o?'selected':''}>${o}</option>`).join('')}</select></div>
+      <div class="field"><label>Storeys</label><input type="number" step="1" data-path="storeys" value="${S.storeys}"/></div>
+      <div class="field"><label>Floor area GIA (m²)</label><input type="number" step="any" data-path="gia" value="${S.gia}"/></div>
+      <div class="field"><label>Glazing ratio (0–1)</label><input type="number" step="any" data-path="glazingRatio" value="${S.glazingRatio}"/></div>
+      <div class="field"><label>Top storey height (m)</label><input type="number" step="any" data-path="topStoreyHeightM" value="${S.topStoreyHeightM}"/></div>
+    </div>
+    <p class="note" id="geomNote"></p>`,false));
+  // fabric build-up elements
+  for(const c of ELEMENT_CARDS){
+    root.appendChild(cardEl(c.icon,c.title,'U-value from a build-up, a direct U-value, or a stage sample',`
+      <div class="field"><label>How is the U-value defined?</label>${modeSelect(c.key+'.mode',[['sample','Stage sample (notional value)'],['uvalue','Enter U-value directly'],['buildup','Build up from layers']])}</div>
+      <div data-show="${c.key}.uvalue"><div class="field"><label>U-value (W/m²K)</label><input type="number" step="any" data-path="${c.key}.u" value="${S[c.key].u}"/></div></div>
+      <div data-show="${c.key}.buildup">${layerTable(c.key)}</div>
+      <div class="uread"><span class="uv" id="u-${c.key}">–</span><span class="ul">W/m²K · <span id="src-${c.key}"></span></span><span class="verdict" id="lim-${c.key}"></span></div>`,false,c.key));
+  }
+  // windows & doors
+  root.appendChild(cardEl('🪟','Windows & doors','Glazing U-value and solar transmittance (g-value)',`
+    <div class="grid2">
+      <div class="field"><label>Windows — source</label>${modeSelect('windows.mode',[['sample','Stage sample'],['uvalue','Enter U-value']])}</div>
+      <div class="field" data-show="windows.uvalue"><label>Window U-value (W/m²K)</label><input type="number" step="any" data-path="windows.u" value="${S.windows.u}"/></div>
+      <div class="field"><label>Window g-value (solar)</label><input type="number" step="any" data-path="windows.g" value="${S.windows.g}"/></div>
+      <div class="field"><label>Doors — source</label>${modeSelect('doors.mode',[['sample','Stage sample'],['uvalue','Enter U-value']])}</div>
+      <div class="field" data-show="doors.uvalue"><label>Door U-value (W/m²K)</label><input type="number" step="any" data-path="doors.u" value="${S.doors.u}"/></div>
+    </div>
+    <div class="uread"><span class="uv" id="u-windows">–</span><span class="ul">W/m²K window · <span id="src-windows"></span></span><span class="verdict" id="lim-windows"></span></div>`,false,'windows'));
+  // thermal bridging
+  root.appendChild(cardEl('🔗','Thermal bridging','y-value direct, or computed from junction details (Σψ·L ÷ exposed area)',`
+    <div class="field"><label>How is bridging defined?</label>${modeSelect('bridging.mode',[['sample','Stage sample (y=0.15)'],['yvalue','Enter y-value'],['junctions','From junction details']])}</div>
+    <div data-show="bridging.yvalue"><div class="field"><label>y-value (W/m²K)</label><input type="number" step="any" data-path="bridging.y" value="${S.bridging.y}"/></div></div>
+    <div data-show="bridging.junctions" id="juncWrap"></div>
+    <div class="uread"><span class="uv" id="u-bridging">–</span><span class="ul">y-value (W/m²K) · <span id="src-bridging"></span></span></div>`,false,'bridging'));
+  // airtightness
+  root.appendChild(cardEl('💨','Airtightness','Design value, or the as-built air-test result (Stage 5+)',`
+    <div class="field"><label>Source</label>${modeSelect('airtightness.mode',[['sample','Stage sample (5)'],['design','Design value'],['test','As-built air-test result']])}</div>
+    <div class="field" data-show="airtightness.design"><label>Design air permeability (m³/h·m² @50Pa)</label><input type="number" step="any" data-path="airtightness.q50" value="${S.airtightness.q50}"/></div>
+    <div class="field" data-show="airtightness.test"><label>Tested air permeability (m³/h·m²)</label><input type="number" step="any" data-path="airtightness.test" value="${S.airtightness.test??''}"/></div>
+    <div class="uread"><span class="uv" id="u-air">–</span><span class="ul">m³/h·m² · <span id="src-air"></span></span><span class="verdict" id="lim-air"></span></div>`,false,'airtightness'));
+  // services
+  root.appendChild(cardEl('🔥','Heating, hot water & ventilation','The systems that turn fabric demand into delivered energy',`
+    <div class="grid2">
+      <div class="field"><label>Heating system</label><select data-path="heating.system">${OPT.heatingSystem.map(o=>`<option ${S.heating.system===o?'selected':''}>${o}</option>`).join('')}</select></div>
+      <div class="field"><label>Ventilation</label><select data-path="ventilation.type">${OPT.ventilation.map(o=>`<option ${S.ventilation.type===o?'selected':''}>${o}</option>`).join('')}</select></div>
+      <div class="field" data-show2="ventilation.mvhr"><label>MVHR heat-recovery efficiency</label><input type="number" step="any" data-path="ventilation.mvhrEff" value="${S.ventilation.mvhrEff}"/></div>
+      <div class="field check"><input type="checkbox" data-path="hotwater.solarThermal" ${S.hotwater.solarThermal?'checked':''} id="st"/><label for="st">Solar thermal hot water</label></div>
+    </div>
+    <p class="note">Heating efficiency/SCOP and ventilation heat recovery are applied automatically in the calculation.</p>`,false));
+  // lighting & renewables
+  root.appendChild(cardEl('💡','Lighting & renewables','',`
+    <div class="grid2">
+      <div class="field"><label>Low-energy lighting (%)</label><input type="number" step="any" data-path="lighting.lowEnergyPct" value="${S.lighting.lowEnergyPct}"/></div>
+      <div class="field"><label>Solar PV (kWp)</label><input type="number" step="any" data-path="pv.kwp" value="${S.pv.kwp}"/></div>
+      <div class="field"><label>PV overshading</label><select data-path="pv.overshade">${OPT.overshade.map(o=>`<option ${S.pv.overshade===o?'selected':''}>${o}</option>`).join('')}</select></div>
+      <div class="field check"><input type="checkbox" data-path="battery" ${S.battery?'checked':''} id="bat"/><label for="bat">Battery storage</label></div>
+    </div>`,false));
+  bindInputs();renderJunctions();applyModeVis();
+}
+function cardEl(icon,title,sub,bodyHTML,collapsed,srcKey){
+  const c=document.createElement('section');c.className='card'+(collapsed?' collapsed':'');
+  c.innerHTML=`<header data-toggle><span class="hi">${icon}</span><div><h2>${esc(title)}</h2>${sub?`<div class="hsub">${esc(sub)}</div>`:''}</div><div class="right">${srcKey?`<span class="srcpill" id="pill-${srcKey}"></span>`:''}<span class="caret">▾</span></div></header><div class="body">${bodyHTML}</div>`;
+  c.querySelector('[data-toggle]').addEventListener('click',e=>{if(e.target.closest('input,select,.del,.addlayer,.lrow'))return;c.classList.toggle('collapsed');});
+  return c;
+}
+function renderJunctions(){
+  const wrap=document.getElementById('juncWrap');if(!wrap)return;
+  const js=S.bridging.junctions;
+  wrap.innerHTML=`<div class="lhdr" style="grid-template-columns:1fr 64px 92px 28px"><span>Junction</span><span>Length m</span><span>Detailing</span><span></span></div>`+
+    js.map((j,i)=>`<div class="lrow" style="grid-template-columns:1fr 64px 92px 28px">
+      <select data-junc="${i}" data-f="type">${JUNC_OPTS.replace(`value="${j.type}"`,`value="${j.type}" selected`)}</select>
+      <input type="number" step="any" data-junc="${i}" data-f="length" value="${j.length}"/>
+      <select data-junc="${i}" data-f="grade"><option value="default" ${j.grade==='default'?'selected':''}>No ACDs</option><option value="acd" ${j.grade==='acd'?'selected':''}>ACD</option><option value="best" ${j.grade==='best'?'selected':''}>Enhanced</option></select>
+      <div class="del" data-juncdel="${i}">✕</div></div>`).join('')+
+    `<div class="addlayer" data-juncadd="1">+ add junction</div>`;
+  wrap.querySelectorAll('[data-junc]').forEach(el=>el.addEventListener('input',()=>{const i=+el.dataset.junc,f=el.dataset.f;S.bridging.junctions[i][f]=f==='length'?(+el.value||0):el.value;recompute();}));
+  wrap.querySelectorAll('[data-juncdel]').forEach(el=>el.addEventListener('click',()=>{S.bridging.junctions.splice(+el.dataset.juncdel,1);renderJunctions();recompute();}));
+  wrap.querySelector('[data-juncadd]').addEventListener('click',()=>{S.bridging.junctions.push({type:'jamb',length:5,grade:'acd'});renderJunctions();recompute();});
+}
+function bindInputs(){
+  document.querySelectorAll('[data-path]').forEach(el=>{
+    const ev=el.type==='checkbox'?'change':'input';
+    el.addEventListener(ev,()=>{
+      let v;if(el.type==='checkbox')v=el.checked;else if(el.type==='number')v=el.value===''?'':Number(el.value);else v=el.value;
+      setP(S,el.dataset.path,v);
+      if(el.dataset.kind==='mode'||el.dataset.path==='projectType'||el.dataset.path==='ventilation.type')applyModeVis();
+      recompute();
+    });
+  });
+  // layer editors
+  document.querySelectorAll('[data-layer]').forEach(el=>el.addEventListener('input',()=>{const k=el.dataset.layer,i=+el.dataset.i,f=el.dataset.f;S[k].layers[i][f]=f==='thickness'?(+el.value||0):el.value;if(f==='material'){renderLayerTable(k);}recompute();}));
+  document.querySelectorAll('[data-add]').forEach(el=>el.addEventListener('click',()=>{const k=el.dataset.add;S[k].layers.push({material:'mineral-wool',thickness:50});renderLayerTable(k);recompute();}));
+  document.querySelectorAll('[data-del]').forEach(el=>el.addEventListener('click',()=>{const k=el.dataset.del;S[k].layers.splice(+el.dataset.i,1);renderLayerTable(k);recompute();}));
+}
+function renderLayerTable(key){const host=document.querySelector(`[data-show="${key}.buildup"]`);if(!host)return;host.innerHTML=layerTable(key);
+  host.querySelectorAll('[data-layer]').forEach(el=>el.addEventListener('input',()=>{const k=el.dataset.layer,i=+el.dataset.i,f=el.dataset.f;S[k].layers[i][f]=f==='thickness'?(+el.value||0):el.value;if(f==='material')renderLayerTable(k);recompute();}));
+  host.querySelector('[data-add]').addEventListener('click',()=>{S[key].layers.push({material:'mineral-wool',thickness:50});renderLayerTable(key);recompute();});
+  host.querySelectorAll('[data-del]').forEach(el=>el.addEventListener('click',()=>{S[key].layers.splice(+el.dataset.i,1);renderLayerTable(key);recompute();}));
+}
+function applyModeVis(){
+  document.querySelectorAll('[data-show]').forEach(el=>{const [path,val]=el.dataset.show.split('.');const cur=getP(S,el.dataset.show.substring(0,el.dataset.show.lastIndexOf('.')));el.style.display=(cur===val)?'':'none';});
+  document.querySelectorAll('[data-show2]').forEach(el=>{el.style.display=(S.ventilation.type==='mvhr')?'':'none';});
+}
+
+// ---------- RIBA + method ----------
+function buildRiba(){
+  const r=document.getElementById('riba');
+  r.innerHTML=RIBA.map(s=>`<button class="step ${s.n===STAGE?'on':''} ${s.n<STAGE?'done':''}" data-stage="${s.n}"><span class="snum">${s.n}</span><span class="sname">${esc(s.name)}</span></button>`).join('');
+  r.querySelectorAll('[data-stage]').forEach(b=>b.addEventListener('click',()=>{STAGE=+b.dataset.stage;buildRiba();stageCard();recompute();}));
+}
+function stageCard(){const s=RIBA[STAGE];document.getElementById('stagecard').innerHTML=`<strong>RIBA Stage ${s.n} — ${esc(s.name)}</strong> &nbsp;·&nbsp; <span class="muted">${esc(s.sap)} Expected SAP input completeness ≈ ${s.exp}%.</span>`;}
+
+// ---------- render results ----------
+const bandClass=b=>'epc-'+b;
+function bar(label,val,target,max,unit,good){
+  const w=clamp(val/max*100,0,100),tw=clamp(target/max*100,0,100);
+  const col=val<=target?'var(--pass)':'var(--fail)';
+  return `<div class="bar"><span>${esc(label)}</span><div class="btrack"><div class="bfill" style="width:${w}%;background:${col}"></div><div class="btgt" style="left:${tw}%"></div></div><span>${round(val,unit==='%'?0:1)} / ${round(target,1)} ${unit}</span></div>`;
+}
+function render(rep){
+  document.getElementById('resmethod').textContent=FACT[rep.method].label;
+  // summary strip
+  const sum=document.getElementById('summary');
+  const compTxt=rep.stage<2?'Pre-SAP':rep.compliant?(rep.sapStage==='design-indicative'?'On track (indicative)':'Compliant'):`${rep.gateFails.length} fail`;
+  const compCol=rep.stage<2?'var(--muted)':rep.compliant?'var(--pass)':'var(--fail)';
+  sum.innerHTML=`
+   <div class="ov"><span class="k">SAP rating</span><span class="v"><span class="epcbig ${bandClass(rep.actual.band)}" style="width:26px;height:26px;font-size:15px;display:inline-grid;vertical-align:middle">${rep.actual.band}</span> ${rep.actual.sap}</span></div>
+   <div class="ov"><span class="k">${rep.isNew?'DER vs TER':'CO₂ vs baseline'}</span><span class="v">${rep.actual.co2}${rep.target?` / ${rep.target.co2}`:''}</span><span class="muted" style="font-size:10.5px">kgCO₂/m²·yr</span></div>
+   <div class="ov"><span class="k">Part L ${rep.sapStage}</span><span class="v" style="color:${compCol}">${compTxt}</span></div>
+   <div class="ov"><span class="k">SAP input completeness</span><span class="v">${rep.completeness}% <span class="muted" style="font-size:11px">/ exp ${rep.expected}%</span></span><div class="gauge"><div class="gfill" style="width:${rep.completeness}%"></div><div class="gmark" style="left:${rep.expected}%"></div></div></div>`;
+  // element U readouts + source pills
+  const lim=LIMIT;
+  for(const k of ['walls','roof','floor']){
+    const map={walls:'wall',roof:'roof',floor:'floor'}[k];
+    document.getElementById('u-'+k).textContent=round(rep.U[map],3);
+    document.getElementById('src-'+k).textContent=srcLabel(rep.src[map]);
+    setPill('pill-'+k,rep.src[map]);
+    const v=document.getElementById('lim-'+k);const l=lim[map];
+    v.textContent=rep.isNew?(rep.U[map]<=l?'≤ limit '+l:'> limit '+l):(rep.U[map]<=REFURB_STD[map]?'≤ refurb '+REFURB_STD[map]:'> refurb '+REFURB_STD[map]);
+    v.className='verdict '+((rep.isNew?rep.U[map]<=l:rep.U[map]<=REFURB_STD[map])?'ok':'no');
+  }
+  document.getElementById('u-windows').textContent=round(rep.U.window,2);
+  document.getElementById('src-windows').textContent=srcLabel(rep.src.window);setPill('pill-windows',rep.src.window);
+  {const v=document.getElementById('lim-windows');const ok=rep.isNew?rep.U.window<=lim.window:rep.U.window<=REFURB_STD.window;v.textContent=ok?'≤ limit':'> limit';v.className='verdict '+(ok?'ok':'no');}
+  document.getElementById('u-bridging').textContent=round(rep.U.y,3);document.getElementById('src-bridging').textContent=srcLabel(rep.src.bridging);setPill('pill-bridging',rep.src.bridging);
+  document.getElementById('u-air').textContent=round(rep.U.q50,1);document.getElementById('src-air').textContent=srcLabel(rep.src.airtightness);setPill('pill-airtightness',rep.src.airtightness);
+  {const v=document.getElementById('lim-air');const ok=rep.U.q50<=lim.q50;v.textContent=rep.isNew?(ok?'≤ limit 8':'> limit 8'):'';v.className='verdict '+(rep.isNew?(ok?'ok':'no'):'na');}
+  // geometry note
+  const A=rep.actual.areas;document.getElementById('geomNote').textContent=`Derived areas: wall ${Math.round(A.wall)} m² · roof ${Math.round(A.roof)} m² · floor ${Math.round(A.floor)} m² · glazing ${Math.round(A.win)} m² · exposed ${Math.round(A.exposed)} m². SAP occupancy N≈${rep.N}.`;
+  // results panel
+  const a=rep.actual,t=rep.target;
+  const verdictBadge=rep.stage<2?'<span class="badge prov">Pre-SAP — strategic stage</span>':rep.compliant?(rep.sapStage==='as-built'?'<span class="badge ok">As-built compliant</span>':rep.sapStage==='as-designed'?'<span class="badge ok">As-designed: Part L pass</span>':'<span class="badge prov">Indicative pass (design-stage)</span>'):'<span class="badge no">Part L: not met</span>';
+  let html=`<div class="res-verdict"><div class="epcbig ${bandClass(a.band)}">${a.band}</div><div><h3>SAP ${a.sap} · band ${a.band}</h3>${verdictBadge}<div class="muted" style="font-size:12px;margin-top:4px">${esc(rep.isNew?'New build — baseline: Part L notional dwelling':'Existing — baseline: existing-dwelling reference + elemental standards')}</div></div></div>`;
+  html+=`<h4 class="sec">Key metrics${t?' vs target (white marker)':''}</h4><div class="bars">`;
+  if(t){
+    html+=bar('Emissions DER',a.co2,t.co2,Math.max(a.co2,t.co2)*1.4||1,'kgCO₂/m²');
+    html+=bar('Primary energy',a.prim,t.prim,Math.max(a.prim,t.prim)*1.4||1,'kWh/m²');
+    html+=bar('Fabric (FEE)',a.fee,t.fee,Math.max(a.fee,t.fee)*1.4||1,'kWh/m²');
+  }else{
+    html+=bar('Emissions',a.co2,rep.baseline?rep.baseline.co2:a.co2,Math.max(a.co2,rep.baseline?rep.baseline.co2:a.co2)*1.2||1,'kgCO₂/m²');
+    html+=bar('Fabric (FEE)',a.fee,a.fee,a.fee*1.4||1,'kWh/m²');
+  }
+  html+=`</div>`;
+  html+=`<h4 class="sec">Heat balance</h4><div class="metric" style="grid-template-columns:1fr auto"><span class="mn">Fabric heat-loss coefficient</span><span class="mv">${a.htcFab} W/K</span></div>
+   <div class="metric" style="grid-template-columns:1fr auto"><span class="mn">Ventilation heat-loss</span><span class="mv">${a.htcVent} W/K</span></div>
+   <div class="metric" style="grid-template-columns:1fr auto"><span class="mn">Space-heat demand</span><span class="mv">${a.spaceHeat} kWh/yr (${a.fee} /m²)</span></div>
+   <div class="metric" style="grid-template-columns:1fr auto"><span class="mn">Hot water demand</span><span class="mv">${a.dhw} kWh/yr</span></div>
+   <div class="metric" style="grid-template-columns:1fr auto"><span class="mn">PV generation</span><span class="mv">${a.pvGen} kWh/yr</span></div>`;
+  html+=`<h4 class="sec">${rep.isNew?'Part L compliance checks':'Refurbishment (Part L1B) checks'}</h4><ul class="complist">`;
+  for(const c of rep.checks)html+=`<li class="ci ${c.status==='pass'?'pass':c.status==='fail'?'fail':c.status==='warning'?'warning':'na'}"><span class="t">${c.status==='pass'?'✓':c.status==='fail'?'✕':'•'}</span><span><span class="t">${esc(c.title)}</span> — <span class="d">${esc(c.detail)}</span></span></li>`;
+  html+=`</ul>`;
+  if(rep.stage<4)html+=`<p class="note">⚠ Full Part L SAP compliance is normally a RIBA Stage 4 deliverable. At Stage ${rep.stage}, undefined inputs use stage samples — treat this as ${rep.stage<2?'a strategic target':'an indicative design-stage check'}, not a submission.</p>`;
+  if(rep.stage>=5&&rep.src.airtightness!=='test')html+=`<p class="note">⚠ As-built stage: enter the air-test result (Airtightness → As-built) to confirm as-built performance.</p>`;
+  document.getElementById('results').innerHTML=html;
+  // layer R cells
+  for(const k of ['walls','roof','floor']){if(S[k].mode!=='buildup')continue;S[k].layers.forEach((L,i)=>{const cell=document.getElementById(`r-${k}-${i}`);if(!cell)return;const m=MAT[L.material];const R=m?(m.R!=null?m.R:(L.thickness||0)/1000/m.l):0;cell.textContent='R '+round(R,2);});}
+}
+function srcLabel(s){return s==='buildup'?'from build-up':s==='uvalue'?'entered':s==='test'?'as-built test':'stage sample';}
+function setPill(id,src){const el=document.getElementById(id);if(!el)return;el.className='srcpill '+(src==='buildup'?'buildup':src==='test'?'test':src==='uvalue'?'uvalue':'sample');el.textContent=srcLabel(src);}
+
+function recompute(){render(assess(S,METHOD,STAGE));}
+
+// ---------- boot ----------
+document.querySelectorAll('#method button').forEach(b=>b.addEventListener('click',()=>{METHOD=b.dataset.m;document.querySelectorAll('#method button').forEach(x=>x.classList.toggle('on',x===b));recompute();}));
+const sel=document.getElementById('sample');
+sel.innerHTML='<option value="">— load an example —</option>'+Object.entries(SAMPLES).map(([k,v])=>`<option value="${k}">${esc(v.name)}</option>`).join('');
+sel.addEventListener('change',()=>{if(SAMPLES[sel.value]){S=Object.assign(defaultSpec(),structuredClone(SAMPLES[sel.value]));buildInputs();recompute();}});
+buildRiba();stageCard();buildInputs();
+document.getElementById('disclaimer').textContent='ResiCert Energy — an indicative, transparent teaching model of the SAP / Home Energy Model workflow. U-values are computed by the simplified series method (BS EN ISO 6946 simple method; ground floors approximated). It is NOT accredited SAP/HEM software, an EPC, or a Part L submission. Use accredited software and an assessor for compliance. Verify against the current Approved Document L and the SAP/HEM conventions in force.';
+recompute();
+</script>
+</body>
+</html>
