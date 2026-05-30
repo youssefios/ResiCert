@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ResiCert — UK Residential Certification</title>
+  <meta name="description" content="Indicative UK residential sustainability & compliance pre-assessment: Building Regulations, planning policy, energy/EPC, and applicable aspirational certifications." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%A1%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">🏡</span>
+      <div>
+        <h1>ResiCert</h1>
+        <p class="tagline">UK residential certification — Building Regs · Planning · Energy · Aspirational schemes</p>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <label for="sample" class="sr-only">Load an example</label>
+      <select id="sample" title="Load an example project"></select>
+      <button id="assessBtn" class="primary">Assess →</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="formPanel" class="panel">
+      <div class="panel-head">
+        <h2>Project</h2>
+        <p class="muted">Fill in what you know — sensible defaults are used for the rest.</p>
+      </div>
+      <form id="projectForm"><!-- fields injected by app.js --></form>
+    </section>
+
+    <section id="resultPanel" class="panel result" aria-live="polite">
+      <div class="empty-state" id="emptyState">
+        <p>Set up a project (or load an example) and press <strong>Assess</strong> to see the certification report.</p>
+      </div>
+      <div id="report" hidden></div>
+    </section>
+  </main>
+
+  <footer class="sitefoot">
+    <p id="disclaimer" class="muted"></p>
+  </footer>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
