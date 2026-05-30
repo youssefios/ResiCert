@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ResiCert — UK Residential Certification (standalone)</title>
+<style>
+:root{
+  --bg:#0f1419;--panel:#161c24;--panel-2:#1d2530;--line:#2a3440;--ink:#e7edf3;--muted:#9fb0c0;
+  --accent:#2f9e5e;--accent-2:#36b3ff;--warn:#e0a32e;--fail:#e0563f;--pass:#2f9e5e;--info:#6b7d8f;
+  --radius:10px;--shadow:0 6px 24px rgba(0,0,0,.28);
+}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.muted{color:var(--muted)}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 22px;background:linear-gradient(180deg,#18202b,#131922);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}.logo{font-size:30px}
+.topbar h1{font-size:19px;margin:0;letter-spacing:.3px}.tagline{margin:0;font-size:12px;color:var(--muted)}
+.topbar-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+select,input,button{font:inherit;color:var(--ink);background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+select{max-width:240px}
+button.primary{background:var(--accent);border-color:#277f4c;color:#fff;cursor:pointer;font-weight:600}
+button.primary:hover{filter:brightness(1.08)}
+main{display:grid;grid-template-columns:minmax(360px,460px) 1fr;gap:18px;padding:18px 22px;align-items:start;max-width:1500px;margin:0 auto}
+@media(max-width:980px){main{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.panel-head{padding:16px 18px 4px}.panel-head h2{margin:0 0 2px;font-size:16px}.result{min-height:60vh}
+#projectForm{padding:8px 18px 20px}
+.fieldset{border:1px solid var(--line);border-radius:8px;margin:12px 0;padding:6px 12px 12px}
+.fieldset>legend{padding:0 6px;color:var(--accent-2);font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:.5px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px}@media(max-width:520px){.grid2{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:3px;margin:6px 0}.field label{font-size:12px;color:var(--muted)}
+.field input[type=number],.field input[type=text],.field select{width:100%}
+.field.check{flex-direction:row;align-items:center;gap:8px}.field.check label{font-size:13px;color:var(--ink)}.field.check input{width:auto}
+#report{padding:4px 18px 22px}.empty-state{display:grid;place-items:center;min-height:50vh;padding:30px;text-align:center;color:var(--muted)}
+.verdict{display:flex;flex-wrap:wrap;align-items:center;gap:16px;padding:18px;margin:12px 0 8px;border-radius:12px;background:radial-gradient(120% 140% at 0% 0%,#1f2a36,#161d27);border:1px solid var(--line)}
+.score-ring{--val:0;width:96px;height:96px;border-radius:50%;flex:0 0 auto;background:conic-gradient(var(--accent) calc(var(--val)*1%),#243040 0);display:grid;place-items:center;position:relative}
+.score-ring::after{content:"";position:absolute;inset:9px;border-radius:50%;background:var(--panel)}.score-ring>span{position:relative;font-size:26px;font-weight:700}
+.verdict-main h3{margin:0 0 4px;font-size:22px}
+.badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;border:1px solid var(--line)}
+.badge.level{background:#20402e;border-color:#2f6e48;color:#bff3d2}.badge.notok{background:#3a201c;border-color:#6e352f;color:#f4c2b8}
+.badge.zero{background:#143a44;border-color:#1f6b7e;color:#aee9f5;margin-left:6px}
+.kpis{display:flex;flex-wrap:wrap;gap:10px;margin:6px 0 0}
+.kpi{background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:8px 12px;min-width:110px}
+.kpi .k{font-size:11px;color:var(--muted)}.kpi .v{font-size:17px;font-weight:700}
+.epc-band{font-weight:800;padding:2px 9px;border-radius:6px;color:#06210f}
+.epc-A{background:#00855a;color:#fff}.epc-B{background:#19b459}.epc-C{background:#8dce46}.epc-D{background:#ffd500}.epc-E{background:#fcaa65}.epc-F{background:#ef8023;color:#fff}.epc-G{background:#e9153b;color:#fff}
+h4.section{margin:22px 0 6px;font-size:15px;border-bottom:1px solid var(--line);padding-bottom:6px}
+.bars{display:grid;gap:8px;margin:6px 0}.bar-row{display:grid;grid-template-columns:150px 1fr 50px;align-items:center;gap:10px;font-size:13px}
+.bar-track{background:#243040;border-radius:6px;height:12px;overflow:hidden}.bar-fill{height:100%;background:linear-gradient(90deg,var(--accent-2),var(--accent))}
+.findings{list-style:none;margin:6px 0;padding:0;display:grid;gap:6px}
+.finding{border:1px solid var(--line);border-left-width:4px;border-radius:8px;padding:9px 12px;background:var(--panel-2)}
+.finding.pass{border-left-color:var(--pass)}.finding.fail{border-left-color:var(--fail)}.finding.warning{border-left-color:var(--warn)}.finding.info{border-left-color:var(--info)}.finding.not-applicable{border-left-color:#3a4654;opacity:.8}
+.finding .ftitle{font-weight:600;display:flex;justify-content:space-between;gap:8px}
+.status-tag{font-size:11px;text-transform:uppercase;letter-spacing:.5px;padding:1px 7px;border-radius:999px}
+.status-tag.pass{background:#1c3a29;color:#bff3d2}.status-tag.fail{background:#3a201c;color:#f4c2b8}.status-tag.warning{background:#3a3320;color:#f3e3b8}.status-tag.info{background:#26313c;color:#cdd9e4}.status-tag.not-applicable{background:#26313c;color:#9fb0c0}
+.finding .fdetail{font-size:13px;margin:4px 0 0}.finding .fmeta{font-size:12px;color:var(--muted);margin-top:4px}.finding .frec{font-size:12px;margin-top:4px;color:#cfe9d8}
+.schemes{display:grid;gap:10px;grid-template-columns:1fr 1fr}@media(max-width:760px){.schemes{grid-template-columns:1fr}}
+.scheme{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--panel-2)}
+.scheme.targeted{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.scheme h5{margin:0 0 2px;font-size:14px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.scheme .owner{font-size:11px;color:var(--muted)}.scheme .ssum{font-size:12px;color:var(--muted);margin:6px 0}
+.readiness{display:flex;align-items:center;gap:8px;margin:6px 0}.readiness .bar-track{flex:1}
+.factor{font-size:12px;display:flex;gap:6px;align-items:baseline}.factor .dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto}.factor .dot.met{background:var(--pass)}.factor .dot.no{background:#50606f}
+.na-list{display:flex;flex-wrap:wrap;gap:6px}.na-pill{font-size:12px;border:1px dashed var(--line);border-radius:999px;padding:3px 10px;color:var(--muted)}
+.recs{list-style:none;padding:0;margin:6px 0;display:grid;gap:6px}
+.rec{display:grid;grid-template-columns:88px 1fr;gap:10px;font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel-2)}
+.prio{font-size:11px;font-weight:700;text-transform:uppercase;text-align:center;padding:2px 0;border-radius:6px;height:fit-content}
+.prio.critical{background:#3a201c;color:#f4c2b8}.prio.high{background:#3a3320;color:#f3e3b8}.prio.medium{background:#26313c;color:#cdd9e4}
+.sitefoot{padding:8px 22px 26px;max-width:1500px;margin:0 auto}.sitefoot .muted{font-size:12px}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="logo">🏡</span>
+    <div><h1>ResiCert</h1><p class="tagline">UK residential certification — Building Regs · Planning · Energy · Aspirational schemes · <em>standalone single-file build</em></p></div>
+  </div>
+  <div class="topbar-actions">
+    <label for="sample" class="sr-only">Load an example</label>
+    <select id="sample" title="Load an example project"></select>
+    <button id="assessBtn" class="primary">Assess →</button>
+  </div>
+</header>
+<main>
+  <section class="panel">
+    <div class="panel-head"><h2>Project</h2><p class="muted">Fill in what you know — sensible defaults are used for the rest.</p></div>
+    <form id="projectForm"></form>
+  </section>
+  <section class="panel result" aria-live="polite">
+    <div class="empty-state" id="emptyState"><p>Set up a project (or load an example) and press <strong>Assess</strong> to see the certification report.</p></div>
+    <div id="report" hidden></div>
+  </section>
+</main>
+<footer class="sitefoot"><p id="disclaimer" class="muted"></p></footer>
+
+<script type="module">
+/* ============================================================================
+   ResiCert — standalone build. The entire assessment engine + UI inlined into
+   one file so it runs in any browser with no server, no build and no network.
+   This is the same logic as the repo's src/engine/*, ported to run client-side.
+   INDICATIVE pre-assessment only — not a SAP/EPC calc or Building Control.
+   ========================================================================== */
+
+// ---- util -----------------------------------------------------------------
+const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
+const round=(n,dp=1)=>{const f=10**dp;return Math.round((n+Number.EPSILON)*f)/f;};
+const savingPct=(base,des)=>!(base>0)?0:round(((base-des)/base)*100,1);
+const epcBand=s=>s>=92?'A':s>=81?'B':s>=69?'C':s>=55?'D':s>=39?'E':s>=21?'F':'G';
+const weightedAverage=parts=>{let n=0,d=0;for(const p of parts)if(p.weight>0){n+=p.value*p.weight;d+=p.weight;}return d>0?n/d:0;};
+const finding=(id,title,status,detail,extra={})=>({id,title,status,detail,...extra});
+const rollUp=fs=>{const c=fs.filter(f=>f.status!=='info'&&f.status!=='not-applicable');return c.some(f=>f.status==='fail')?'fail':c.some(f=>f.status==='warning')?'warning':'pass';};
+const pctTrue=a=>a.length?(a.filter(Boolean).length/a.length)*100:0;
+
+// ---- domain model ---------------------------------------------------------
+const OPT={
+  nation:['england','wales','scotland','northern-ireland'],
+  region:['london','south-east','south-west','east','east-midlands','west-midlands','yorkshire','north-west','north-east','wales','scotland','northern-ireland'],
+  dwellingType:['house','flat','maisonette','bungalow'],
+  builtForm:['detached','semi-detached','mid-terrace','end-terrace','apartment-block'],
+  projectType:['new-build','major-refurbishment','change-of-use','extension'],
+  heatingSystem:['gas-boiler','ashp','gshp','direct-electric','hydrogen-ready','heat-network','biomass'],
+  ventilationSystem:['mvhr','mev','dev','natural'],
+  primaryStructure:['masonry','timber-frame','clt','light-steel','icf'],
+};
+function defaultProject(){return{
+  name:'Untitled scheme',reference:'',
+  nation:'england',region:'south-east',dwellingType:'house',builtForm:'semi-detached',projectType:'new-build',
+  waterStressedArea:false,units:1,storeys:2,topStoreyHeightM:5,bedrooms:3,bedspaces:5,gia:93,
+  uWall:0.18,uRoof:0.13,uFloor:0.13,uWindow:1.4,airPermeability:5,thermalBridging:0.05,glazingRatio:0.22,
+  heatingSystem:'gas-boiler',ventilationSystem:'natural',waterUseLpd:125,pvKwp:0,batteryStorage:false,
+  evChargePoint:true,gigabitInfrastructure:true,gigabitConnection:true,
+  crossVentilation:true,solarShading:false,daylightFactorAvg:1.8,accessibleM4_2:false,wheelchairM4_3:false,
+  pas24SecureDoors:true,separatingSoundDnTw:45,impactSoundLnTw:62,
+  primaryStructure:'masonry',embodiedCarbonA1A5:700,responsiblySourcedMaterials:true,recycledContent:false,
+  suds:false,rainwaterHarvesting:false,greywaterReuse:false,
+  biodiversityNetGainPct:10,affordableHousingPct:0,cycleStorage:true,parkingSpaces:2,
+  sapEpcScore:null,sapDER:null,targetCertifications:[],
+};}
+function normaliseProject(input={}){
+  const base=defaultProject(),out={...base};
+  for(const key of Object.keys(base)){
+    if(!(key in input))continue;
+    const def=base[key],raw=input[key];
+    if(raw===undefined||raw===null){if(key==='sapEpcScore'||key==='sapDER')out[key]=null;continue;}
+    if(typeof def==='number'){const n=Number(raw);out[key]=Number.isFinite(n)?n:def;}
+    else if(typeof def==='boolean'){out[key]=raw===true||raw==='true'||raw==='on'||raw===1||raw==='1';}
+    else if(Array.isArray(def)){out[key]=Array.isArray(raw)?raw.map(String):String(raw).split(',').map(s=>s.trim()).filter(Boolean);}
+    else out[key]=String(raw);
+  }
+  return out;
+}
+
+// ---- energy model ---------------------------------------------------------
+const HDD={london:2030,'south-east':2100,'south-west':2050,east:2200,'east-midlands':2300,'west-midlands':2300,yorkshire:2400,'north-west':2350,'north-east':2450,wales:2250,scotland:2650,'northern-ireland':2400};
+const PV_YIELD={london:950,'south-east':980,'south-west':1000,east:970,'east-midlands':920,'west-midlands':910,yorkshire:880,'north-west':870,'north-east':860,wales:900,scotland:820,'northern-ireland':850};
+const EXPOSURE={detached:1,'semi-detached':.75,'end-terrace':.7,'mid-terrace':.55,'apartment-block':.5};
+const CO2={electricity:.136,gas:.210,biomass:.029,'heat-network':.150};
+const PE={electricity:1.501,gas:1.130,biomass:1.100,'heat-network':1.300};
+const HEAT_EFF={'gas-boiler':.9,ashp:3,gshp:3.8,'direct-electric':1,'hydrogen-ready':.9,'heat-network':1,biomass:.85};
+const HEAT_FUEL={'gas-boiler':'gas',ashp:'electricity',gshp:'electricity','direct-electric':'electricity','hydrogen-ready':'gas','heat-network':'heat-network',biomass:'biomass'};
+const MVHR={mvhr:.88,mev:0,dev:0,natural:0};
+const SH=2.4;
+function estimateAreas(p){
+  const footprint=p.gia/Math.max(1,p.storeys),side=Math.sqrt(Math.max(1,footprint)),perim=4*side;
+  const exp=EXPOSURE[p.builtForm]??.8,grossWall=perim*SH*p.storeys*exp;
+  const glazing=clamp(p.glazingRatio,0,.9)*p.gia,wall=Math.max(0,grossWall-glazing);
+  const deck=p.builtForm==='apartment-block'?.4:1,roof=footprint*deck,floor=footprint*deck;
+  return{footprint,wall,glazing,roof,floor,totalExposed:wall+glazing+roof+floor};
+}
+function runEnergyModel(p){
+  const A=estimateAreas(p),hdd=HDD[p.region]??2300;
+  const fabricHLC=p.uWall*A.wall+p.uWindow*A.glazing+p.uRoof*A.roof+p.uFloor*A.floor+p.thermalBridging*A.totalExposed;
+  const volume=p.gia*SH,infil=p.airPermeability/20,rec=MVHR[p.ventilationSystem]??0,vent=0.5*(1-rec);
+  const ventHLC=0.33*(infil+vent)*volume,hlc=fabricHLC+ventHLC;
+  const grossSH=(hlc*hdd*24)/1000,util=clamp(0.78-p.glazingRatio*0.1,0.6,0.85),spaceHeat=grossSH*util;
+  const dhw=p.bedspaces*1.1*365*1.15,eff=HEAT_EFF[p.heatingSystem]??1,fuel=HEAT_FUEL[p.heatingSystem]??'electricity';
+  const deliveredHeat=(spaceHeat+dhw)/eff,lightAux=9*p.gia**0.5*5+p.gia*4,pvGen=p.pvKwp*(PV_YIELD[p.region]??900);
+  let elec=lightAux,gas=0,other=0;
+  if(fuel==='electricity')elec+=deliveredHeat;else if(fuel==='gas')gas+=deliveredHeat;else other+=deliveredHeat;
+  const selfUse=Math.min(elec,pvGen*0.6),exported=Math.max(0,pvGen-selfUse),netElec=Math.max(0,elec-selfUse);
+  const of=(fuel==='electricity'||fuel==='gas')?'electricity':fuel;
+  const co2=netElec*CO2.electricity+gas*CO2.gas+other*(CO2[of]??CO2.electricity)-exported*CO2.electricity;
+  const prim=netElec*PE.electricity+gas*PE.gas+other*(PE[of]??PE.electricity)-exported*PE.electricity;
+  const eui=(deliveredHeat+lightAux)/p.gia;
+  return{areas:A,hlc:round(hlc,1),spaceHeatDemand:round(spaceHeat),dhwDemand:round(dhw),deliveredHeat:round(deliveredHeat),
+    lightingAux:round(lightAux),pvGeneration:round(pvGen),netElectricity:round(netElec),gas:round(gas),exported:round(exported),
+    co2PerYear:round(co2),co2PerM2:round(co2/p.gia,1),primaryPerM2:round(prim/p.gia),eui:round(eui,1),
+    spaceHeatIntensity:round(spaceHeat/p.gia,1),fuel};
+}
+// ---- EPC ------------------------------------------------------------------
+const UNIT={electricity:.27,gas:.07};
+function assessEpc(p,m){
+  if(typeof p.sapEpcScore==='number'&&p.sapEpcScore>0){const s=clamp(p.sapEpcScore,1,100);return{source:'declared',score:round(s),band:epcBand(s),annualEnergyCostPerM2:null,note:'Using supplied SAP/EPC score.'};}
+  const cost=m.netElectricity*UNIT.electricity+m.gas*UNIT.gas-m.exported*0.05,cpm=cost/p.gia;
+  const score=clamp(Math.round(100-cpm*6),1,100);
+  return{source:'modelled',score,band:epcBand(score),annualEnergyCostPerM2:round(cpm,2),note:'Indicative only — not an accredited SAP/EPC.'};
+}
+// ---- Part L ---------------------------------------------------------------
+function notional(p){return{...p,uWall:.18,uRoof:.11,uFloor:.13,uWindow:1.2,airPermeability:5,thermalBridging:.05,heatingSystem:'gas-boiler',ventilationSystem:p.ventilationSystem==='natural'?'natural':p.ventilationSystem,pvKwp:round((p.gia/Math.max(1,p.storeys))*0.04,2)};}
+function assessPartL(p,actual){
+  const findings=[];
+  if(p.projectType!=='new-build'&&p.projectType!=='change-of-use'){
+    findings.push(finding('partL-scope','Part L target rates','not-applicable','Full target-rate compliance applies to new builds (and material changes of use). Refurb/extension use elemental & consequential-improvement rules.',{reference:'Approved Document L Vol 1 (2021)'}));
+    return{findings,status:rollUp(findings),ter:null,der:round(actual.co2PerM2,1),tper:null,dper:round(actual.primaryPerM2)};
+  }
+  const t=runEnergyModel(notional(p)),ter=round(t.co2PerM2,1),der=round(actual.co2PerM2,1),tper=round(t.primaryPerM2),dper=round(actual.primaryPerM2);
+  findings.push(finding('partL-der','Part L — CO₂ emission rate (DER ≤ TER)',der<=ter?'pass':'fail',`Modelled DER ${der} vs TER ${ter} kgCO₂/m²·yr.`,{requirement:'DER must not exceed TER.',recommendation:der<=ter?undefined:'Improve fabric, switch to a heat pump, or add PV.',reference:'Approved Document L Vol 1 (2021)'}));
+  findings.push(finding('partL-per','Part L — primary energy rate (DPER ≤ TPER)',dper<=tper?'pass':'fail',`Modelled DPER ${dper} vs TPER ${tper} kWh/m²·yr.`,{requirement:'DPER must not exceed TPER.',recommendation:dper<=tper?undefined:'Reduce delivered energy and/or add on-site renewables.',reference:'Approved Document L Vol 1 (2021)'}));
+  const cut=ter>0?((ter-der)/ter)*100:0,lowC=['ashp','gshp','heat-network'].includes(p.heatingSystem);
+  if(lowC&&cut>=70)findings.push(finding('fhs','Future Homes Standard 2025 readiness','pass',`Low-carbon heating and ~${round(cut)}% lower CO₂ than the Part L 2021 target — broadly aligned with FHS (~75–80%).`,{reference:'Future Homes Standard'}));
+  else findings.push(finding('fhs','Future Homes Standard 2025 readiness','warning',`Not yet FHS-aligned: ${lowC?'':'fossil-fuel heating; '}~${round(cut)}% CO₂ reduction vs the 2021 target (FHS expects ~75–80% and low-carbon heat).`,{recommendation:'Adopt a heat pump, strengthen fabric and add PV.',reference:'Future Homes Standard'}));
+  return{findings,status:rollUp(findings),ter,der,tper,dper};
+}
+// ---- EDGE -----------------------------------------------------------------
+const ENERGY_BASE=130,WATER_BASE=150,EMB_BASE={masonry:800,'light-steel':780,icf:760,'timber-frame':650,clt:600},TIER={certified:20,advanced:40};
+function assessEdge(p,m){
+  const energy=savingPct(ENERGY_BASE,m.eui);
+  let w=p.waterUseLpd;if(p.rainwaterHarvesting)w*=0.88;if(p.greywaterReuse)w*=0.90;const water=savingPct(WATER_BASE,w);
+  const eb=EMB_BASE[p.primaryStructure]??750;let e=p.embodiedCarbonA1A5;if(p.recycledContent)e*=0.96;if(p.responsiblySourcedMaterials)e*=0.99;const materials=savingPct(eb,e);
+  const pillars={energy:{saving:energy,baseline:ENERGY_BASE,design:m.eui,unit:'kWh/m²·yr'},water:{saving:water,baseline:WATER_BASE,design:round(w,1),unit:'L/p·day'},materials:{saving:materials,baseline:eb,design:round(e),unit:'kgCO₂e/m²'}};
+  const all=energy>=TIER.certified&&water>=TIER.certified&&materials>=TIER.certified,zero=m.co2PerM2<=0,adv=all&&energy>=TIER.advanced;
+  let tier='none';if(zero&&all)tier='zero-carbon';else if(adv)tier='advanced';else if(all)tier='certified';
+  return{pillars,meetsAllPillars:all,zeroCarbon:zero,tier,thresholds:TIER};
+}
+// ---- regulations ----------------------------------------------------------
+const LIM={wall:.26,roof:.16,floor:.18,window:1.6,airPermeability:8},NOT={wall:.18,roof:.11,floor:.13,window:1.2};
+const QUAL=[['A','Structure'],['C','Site preparation & moisture'],['D','Toxic substances'],['H','Drainage & waste'],['J','Combustion appliances'],['K','Protection from falling'],['P','Electrical safety'],['7','Materials & workmanship (Reg 7)']];
+function evaluateRegulations(p){
+  const f=[],attached=p.dwellingType==='flat'||p.dwellingType==='maisonette'||['apartment-block','mid-terrace','semi-detached','end-terrace'].includes(p.builtForm);
+  // Part L fabric
+  const iss=[];
+  if(p.uWall>LIM.wall)iss.push(`wall ${p.uWall} > ${LIM.wall}`);if(p.uRoof>LIM.roof)iss.push(`roof ${p.uRoof} > ${LIM.roof}`);
+  if(p.uFloor>LIM.floor)iss.push(`floor ${p.uFloor} > ${LIM.floor}`);if(p.uWindow>LIM.window)iss.push(`window ${p.uWindow} > ${LIM.window}`);
+  if(p.airPermeability>LIM.airPermeability)iss.push(`air permeability ${p.airPermeability} > ${LIM.airPermeability}`);
+  if(iss.length)f.push(finding('L-fabric','Part L — limiting fabric standards','fail',`Element(s) exceed Part L 2021 limiting values: ${iss.join('; ')}.`,{requirement:'Worst-case U-values wall ≤0.26, roof ≤0.16, floor ≤0.18, window ≤1.6; air perm ≤8.',recommendation:'Improve listed elements; aim for notional values.',reference:'Approved Document L Vol 1 (2021), Table 1.2'}));
+  else{const ok=p.uWall<=NOT.wall&&p.uRoof<=NOT.roof&&p.uFloor<=NOT.floor&&p.uWindow<=NOT.window;f.push(finding('L-fabric','Part L — limiting fabric standards',ok?'pass':'warning',ok?'All elements meet or beat notional-dwelling fabric values (good practice).':'Elements meet limiting values but not all reach notional values; target rate may need compensation (e.g. PV).',{requirement:'Notional fabric wall ≤0.18, roof ≤0.11, floor ≤0.13, window ≤1.2; air perm ≤5.',reference:'Approved Document L Vol 1 (2021)'}));}
+  if(p.heatingSystem==='gas-boiler')f.push(finding('L-heating','Part L — heating & Future Homes Standard','warning','Gas boiler specified. Compliant under Part L 2021 but not aligned with the Future Homes Standard 2025 (expected to end new fossil-fuel heating).',{recommendation:'Consider an air-source heat pump to future-proof and unlock higher ratings.',reference:'Future Homes Standard consultation'}));
+  // Part F
+  if(p.airPermeability<=5&&p.ventilationSystem==='natural')f.push(finding('F-vent','Part F — ventilation provision','warning',`At ${p.airPermeability} m³/h·m² the dwelling is relatively airtight; natural ventilation may be insufficient for IAQ.`,{requirement:'AD F (2021): airtight dwellings generally need continuous MEV or MVHR.',recommendation:'Specify continuous MEV or MVHR.',reference:'Approved Document F Vol 1 (2021)'}));
+  else f.push(finding('F-vent','Part F — ventilation provision','pass',`Ventilation (${p.ventilationSystem}) appropriate for air permeability ${p.airPermeability} m³/h·m².`,{reference:'Approved Document F Vol 1 (2021)'}));
+  // Part G2
+  const wl=p.waterStressedArea?110:125;
+  if(p.waterUseLpd>wl)f.push(finding('G2-water','Part G2 — water efficiency','fail',`Designed water use ${p.waterUseLpd} L/p/day exceeds the ${wl} L/p/day requirement.`,{requirement:p.waterStressedArea?'Optional 110 L/p/day (water-stressed/condition).':'Mandatory 125 L/p/day.',recommendation:'Specify low-flow fittings and dual-flush WCs.',reference:'Approved Document G (2015), Reg 36'}));
+  else f.push(finding('G2-water','Part G2 — water efficiency','pass',`Designed water use ${p.waterUseLpd} L/p/day meets the ${wl} L/p/day requirement.`,{reference:'Approved Document G (2015)'}));
+  // Part O
+  if(p.projectType==='new-build'||p.projectType==='change-of-use'){
+    const hr=p.region==='london',hi=p.glazingRatio>0.25;
+    if(hi&&!p.solarShading&&!p.crossVentilation)f.push(finding('O-overheat','Part O — overheating','fail',`High glazing (${Math.round(p.glazingRatio*100)}%) with no shading and no cross ventilation${hr?' in a higher-risk location (London)':''}.`,{requirement:'Limit solar gains & provide means to remove heat (simplified method or TM59).',recommendation:'Add shading / reduce glazing & provide cross ventilation, or model with TM59.',reference:'Approved Document O (2021)'}));
+    else if(hi&&(!p.solarShading||!p.crossVentilation))f.push(finding('O-overheat','Part O — overheating','warning',`Glazing ${Math.round(p.glazingRatio*100)}% with partial mitigation. May need TM59 verification${hr?' (higher-risk location)':''}.`,{recommendation:'Confirm simplified-method limits or model with TM59.',reference:'Approved Document O (2021)'}));
+    else f.push(finding('O-overheat','Part O — overheating','pass','Solar gains and heat-removal provisions appear reasonable.',{reference:'Approved Document O (2021)'}));
+  }else f.push(finding('O-overheat','Part O — overheating','not-applicable','Part O applies to new dwellings (and some changes of use).',{reference:'Approved Document O (2021)'}));
+  // Part M
+  if(p.wheelchairM4_3)f.push(finding('M-access','Part M — access','pass','Designed to M4(3) wheelchair-user standard.',{reference:'Approved Document M Vol 1 (2015)'}));
+  else if(p.accessibleM4_2)f.push(finding('M-access','Part M — access','pass','Designed to M4(2) accessible & adaptable standard.',{reference:'Approved Document M Vol 1 (2015)'}));
+  else f.push(finding('M-access','Part M — access','pass','Assumed to meet the mandatory M4(1) baseline. Confirm whether the local plan requires M4(2)/M4(3).',{recommendation:'Check the local plan accessibility policy.',reference:'Approved Document M Vol 1 (2015)'}));
+  // Part S
+  if(p.parkingSpaces>0&&!p.evChargePoint)f.push(finding('S-ev','Part S — EV charging','fail','Associated parking provided but no EV charge point specified.',{recommendation:'Provide a 7 kW charge point per dwelling with parking.',reference:'Approved Document S (2021)'}));
+  else f.push(finding('S-ev','Part S — EV charging',p.parkingSpaces>0?'pass':'not-applicable',p.parkingSpaces>0?'EV charge point provided for the parking space.':'No associated parking — requirement does not apply.',{reference:'Approved Document S (2021)'}));
+  // Part R
+  if(!p.gigabitInfrastructure)f.push(finding('R-comms','Part R — gigabit-ready infrastructure','fail','In-building gigabit-ready physical infrastructure not provided.',{recommendation:'Provide ducting/containment and a gigabit connection within the cost cap.',reference:'Approved Document R (2022)'}));
+  else f.push(finding('R-comms','Part R — gigabit-ready infrastructure',p.gigabitConnection?'pass':'warning',p.gigabitConnection?'Gigabit-ready infrastructure and connection provided.':'Infrastructure provided; confirm a connection where available within the cap.',{reference:'Approved Document R (2022)'}));
+  // Part Q
+  f.push(finding('Q-security','Part Q — security',p.pas24SecureDoors?'pass':'fail',p.pas24SecureDoors?'Easily accessible doors/windows to PAS 24 (or equivalent).':'Easily accessible doorsets/windows not confirmed to PAS 24.',{recommendation:'Specify PAS 24 certified doorsets and accessible windows.',reference:'Approved Document Q (2015)'}));
+  // Part E
+  if(attached){const a=p.separatingSoundDnTw>=45,i=p.impactSoundLnTw<=62;
+    if(!a||!i)f.push(finding('E-sound','Part E — sound insulation','fail',`Separating element below standard: ${!a?`airborne ${p.separatingSoundDnTw} < 45 dB`:''}${(!a&&!i)?'; ':''}${!i?`impact ${p.impactSoundLnTw} > 62 dB`:''}.`,{requirement:'Airborne ≥45 dB; impact ≤62 dB.',recommendation:'Upgrade build-ups; pre-completion testing or Robust Details.',reference:'Approved Document E (2003, 2015 amends)'}));
+    else f.push(finding('E-sound','Part E — sound insulation','pass',`Separating performance meets standard (airborne ${p.separatingSoundDnTw} dB, impact ${p.impactSoundLnTw} dB).`,{reference:'Approved Document E'}));
+  }else f.push(finding('E-sound','Part E — sound insulation','not-applicable','No separating walls/floors with other dwellings (detached).',{reference:'Approved Document E'}));
+  // Part B
+  {const h=p.topStoreyHeightM,block=p.builtForm==='apartment-block'||p.dwellingType==='flat',notes=[];let st='pass';
+   if(h>18){notes.push('Top storey >18 m: combustible materials banned in external walls (Reg 7(2)).');st='warning';}
+   if(block&&h>11){notes.push('New block of flats >11 m: sprinkler/AFSS provision required.');st='warning';}
+   if(h>18)notes.push('Tall residential: justify staircase strategy per current guidance.');
+   f.push(finding('B-fire','Part B — fire safety',st,notes.length?notes.join(' '):'Standard dwelling fire-safety provisions apply; detailed design by a competent person required.',{requirement:'AD B Vol 1. Triggers: 11 m sprinklers (flats), 18 m cladding ban & staircase strategy.',recommendation:st==='warning'?'Engage a fire engineer; confirm cladding, sprinklers and escape strategy.':undefined,reference:'Approved Document B Vol 1; Reg 7(2)'}));}
+  // qualitative
+  for(const[part,title]of QUAL)f.push(finding(`reg-${part}`,`Part ${part} — ${title}`,'info','To be confirmed through detailed design and Building Control — not quantitatively assessed by ResiCert.',{reference:`Approved Document ${part}`}));
+  // nation
+  if(p.nation!=='england'){const nm={wales:'Welsh Approved Documents',scotland:'Scottish Technical Handbooks','northern-ireland':'NI Technical Booklets'}[p.nation];f.push(finding('nation-divergence','Devolved standards apply','warning',`This project is in ${p.nation}, which uses its own standards (${nm}). England Approved Documents applied as indicative only — verify locally.`,{reference:nm}));}
+  const fails=f.filter(x=>x.status==='fail');
+  return{findings:f,status:rollUp(f),compliant:fails.length===0,mandatoryFailures:fails};
+}
+// ---- planning -------------------------------------------------------------
+const NDSS={'1b1p':[39,39,39],'1b2p':[50,58,58],'2b3p':[61,70,70],'2b4p':[70,79,79],'3b4p':[74,84,90],'3b5p':[86,93,99],'3b6p':[95,102,108],'4b5p':[90,97,103],'4b6p':[99,106,112],'4b7p':[108,115,121],'4b8p':[117,124,130],'5b6p':[103,110,116],'5b7p':[112,119,125],'6b7p':[116,123,129]};
+function ndssMinimum(b,p,s){const k=`${b}b${p}p`,c=s<=1?0:s===2?1:2;if(NDSS[k])return NDSS[k][c];return round(25+Math.max(0,p-1)*17+(c>=1?6:0)+(c>=2?6:0));}
+function assessPlanning(p){
+  const f=[],min=ndssMinimum(p.bedrooms,p.bedspaces,p.storeys);
+  if(p.gia<min)f.push(finding('ndss','Space standards (NDSS)','fail',`GIA ${p.gia} m² is below the ${min} m² minimum for a ${p.bedrooms}-bed/${p.bedspaces}-person, ${p.storeys}-storey dwelling.`,{recommendation:'Increase floor area or revise the bed/person mix.',reference:'Technical housing standards — NDSS (2015)'}));
+  else f.push(finding('ndss','Space standards (NDSS)','pass',`GIA ${p.gia} m² meets the ${min} m² NDSS minimum.`,{reference:'NDSS (2015)'}));
+  if(p.biodiversityNetGainPct<10)f.push(finding('bng','Biodiversity Net Gain','fail',`Proposed BNG of ${p.biodiversityNetGainPct}% is below the statutory minimum 10%.`,{recommendation:'Deliver ≥10% measurable net gain, secured for 30 years.',reference:'Environment Act 2021'}));
+  else f.push(finding('bng','Biodiversity Net Gain','pass',`Proposed BNG of ${p.biodiversityNetGainPct}% meets/exceeds the statutory 10% minimum.`,{reference:'Environment Act 2021'}));
+  f.push(finding('suds','Sustainable drainage (SuDS)',p.suds?'pass':'warning',p.suds?'Sustainable drainage proposed, consistent with the drainage hierarchy.':'No SuDS indicated. NPPF/local policy expects sustainable drainage.',{recommendation:p.suds?undefined:'Incorporate SuDS and demonstrate greenfield run-off rates.',reference:'NPPF; SuDS standards'}));
+  if(p.accessibleM4_2||p.wheelchairM4_3)f.push(finding('access-mix','Accessible housing (M4(2)/M4(3))','pass',`Provides ${p.wheelchairM4_3?'M4(3) wheelchair-user':'M4(2) accessible & adaptable'} homes.`,{reference:'Local plan accessibility policy'}));
+  else f.push(finding('access-mix','Accessible housing (M4(2)/M4(3))','warning','No M4(2)/M4(3) provision indicated. Many local plans require a proportion.',{recommendation:'Check the local plan; design the required proportion.',reference:'Local plan accessibility policy'}));
+  f.push(finding('daylight','Daylight & sunlight (BRE)',p.daylightFactorAvg>=1.5?'pass':'warning',`Average daylight factor ${p.daylightFactorAvg}% ${p.daylightFactorAvg>=1.5?'meets':'is below'} a typical ~1.5–2% guide.`,{recommendation:p.daylightFactorAvg>=1.5?undefined:'Increase glazing/room proportions or revise massing.',reference:'BRE BR 209; BS EN 17037'}));
+  f.push(finding('cycle','Cycle storage',p.cycleStorage?'pass':'warning',p.cycleStorage?'Secure cycle storage provided.':'No secure cycle storage indicated.',{reference:'NPPF; local standards'}));
+  f.push(finding('affordable','Affordable housing','info',p.units>1?`Scheme of ${p.units} units with ${p.affordableHousingPct}% affordable. Most authorities seek 30–50% on qualifying sites (10+ units).`:'Single dwelling — affordable-housing requirements generally do not apply.',{reference:'NPPF; local policy'}));
+  return{findings:f,status:rollUp(f),ndssMinimum:min};
+}
+// ---- certifications -------------------------------------------------------
+const isMulti=p=>p.units>1||p.builtForm==='apartment-block'||p.dwellingType==='flat'||p.dwellingType==='maisonette';
+const rf=(factors,recs=[])=>({score:factors.length?Math.round(factors.filter(x=>x.met).length/factors.length*100):0,factors,recommendations:recs});
+const SCHEMES=[
+  {id:'breeam',name:'BREEAM',owner:'BRE',focus:'Whole-building sustainability',bestFor:'multi-unit',summary:'Multi-issue sustainability assessment (energy, water, materials, health, management, ecology). Most used on multi-residential; single homes usually go to HQM.',applicability:p=>isMulti(p)?{applicable:true,reason:'Multi-residential / apartment scheme — BREEAM New Construction (residential) applies.'}:{applicable:true,reason:'Applicable, but for an individual new home HQM is usually the better fit.'},readiness:c=>{const{project:p,edge,epc}=c;return rf([{label:'Energy (Ene)',met:epc.score>=81,note:`EPC ~${epc.band}.`},{label:'Water (Wat)',met:edge.pillars.water.saving>=20,note:`Water saving ${edge.pillars.water.saving}%.`},{label:'Materials (Mat)',met:p.responsiblySourcedMaterials,note:'Responsible sourcing.'},{label:'Health (Hea)',met:p.daylightFactorAvg>=1.5&&(p.solarShading||p.crossVentilation),note:'Daylight & comfort.'},{label:'Ecology (LE)',met:p.biodiversityNetGainPct>=10,note:`BNG ${p.biodiversityNetGainPct}%.`},{label:'Pollution / surface water',met:p.suds,note:'SuDS.'}],['Appoint a licensed BREEAM Assessor at concept stage; target Very Good / Excellent.']);}},
+  {id:'hqm',name:'Home Quality Mark (HQM)',owner:'BRE',focus:'New-home quality & sustainability',bestFor:'both',summary:"BRE's residential-specific mark for new homes — footprint, running costs, health & wellbeing and connectivity, rated in stars.",applicability:()=>({applicable:true,reason:'Purpose-built for new residential — houses and apartments.'}),readiness:c=>{const{project:p,epc,edge}=c;return rf([{label:'Energy & running cost',met:epc.score>=81,note:`EPC ~${epc.band}.`},{label:'Water efficiency',met:p.waterUseLpd<=110,note:`${p.waterUseLpd} L/p/day.`},{label:'Health & wellbeing',met:p.daylightFactorAvg>=1.5,note:'Daylight, sound, air.'},{label:'Digital connectivity',met:p.gigabitConnection,note:'Gigabit connection.'},{label:'Construction impacts',met:edge.pillars.materials.saving>=20,note:`Embodied saving ${edge.pillars.materials.saving}%.`}],['Register with BRE and appoint an HQM Assessor; well suited to volume housebuilding.']);}},
+  {id:'passivhaus',name:'Passivhaus / EnerPHit',owner:'Passive House Institute',focus:'Ultra-low energy fabric & comfort',bestFor:'both',summary:'Rigorous fabric-first energy standard: very low space-heating demand, excellent airtightness, MVHR. EnerPHit is the retrofit variant.',applicability:()=>({applicable:true,reason:'Applies to any dwelling — homes and apartment blocks.'}),readiness:c=>{const{project:p,model:m}=c;return rf([{label:'Space-heat ≤15 kWh/m²·yr',met:m.spaceHeatIntensity<=20,note:`~${m.spaceHeatIntensity} kWh/m²·yr (PHPP needed).`},{label:'Airtightness ≤0.6 ach',met:p.airPermeability<=1.5,note:`${p.airPermeability} m³/h·m².`},{label:'MVHR',met:p.ventilationSystem==='mvhr',note:p.ventilationSystem},{label:'Glazing U≤0.8',met:p.uWindow<=0.85,note:`U ${p.uWindow}.`},{label:'Walls U≤0.15',met:p.uWall<=0.15,note:`U ${p.uWall}.`}],['Model in PHPP from the outset; target ≤0.6 ach, MVHR, triple glazing, thermal-bridge-free detailing.']);}},
+  {id:'well',name:'WELL Building Standard',owner:'IWBI',focus:'Occupant health & wellbeing',bestFor:'multi-unit',summary:'Health-focused standard (air, water, light, comfort, mind, community). For residential, applied to multifamily buildings & common areas.',applicability:p=>isMulti(p)?{applicable:true,reason:'Multifamily residential — WELL v2 applies to homes & common areas.'}:{applicable:false,reason:'Targets multifamily buildings; limited applicability to a single private dwelling.'},readiness:c=>{const{project:p}=c;return rf([{label:'Air — ventilation',met:p.ventilationSystem==='mvhr'||p.ventilationSystem==='mev',note:'Continuous mechanical vent.'},{label:'Water — efficiency',met:p.waterUseLpd<=110,note:'Efficient fittings.'},{label:'Light — daylight',met:p.daylightFactorAvg>=2,note:`DF ${p.daylightFactorAvg}%.`},{label:'Thermal comfort',met:p.solarShading||p.crossVentilation,note:'Shading/cross vent.'},{label:'Sound',met:p.separatingSoundDnTw>=50,note:'Enhanced acoustics.'}],['Engage a WELL AP; many features are operational and need a management plan.']);}},
+  {id:'fitwel',name:'Fitwel',owner:'Center for Active Design',focus:'Health (cost-effective)',bestFor:'multi-unit',summary:'Health-promoting certification with a Multifamily Residential scorecard — active design, amenities, community.',applicability:p=>isMulti(p)?{applicable:true,reason:'Fitwel has a Multifamily Residential scorecard.'}:{applicable:false,reason:'Residential scorecards target multifamily buildings, not single homes.'},readiness:c=>{const{project:p}=c;return rf([{label:'Active design',met:p.cycleStorage,note:'Cycle storage / active travel.'},{label:'Outdoor / ecology',met:p.biodiversityNetGainPct>=10,note:'Green space.'},{label:'Indoor air quality',met:p.ventilationSystem!=='natural',note:'Mechanical vent.'},{label:'Daylight & views',met:p.daylightFactorAvg>=1.5,note:`DF ${p.daylightFactorAvg}%.`}],['Low-cost and operationally focused — suits multifamily and BTR.']);}},
+  {id:'wiredscore-home',name:'WiredScore Home',owner:'WiredScore',focus:'Digital connectivity',bestFor:'multi-unit',summary:'Rates the digital connectivity of residential buildings — broadband resilience, mobile coverage, in-home infrastructure. Aimed at multi-residential.',applicability:p=>isMulti(p)?{applicable:true,reason:'Rates connectivity of multi-residential buildings.'}:{applicable:false,reason:'Designed for multi-residential; not generally certified for a single house.'},readiness:c=>{const{project:p}=c;return rf([{label:'Gigabit connection',met:p.gigabitConnection,note:'Full-fibre service.'},{label:'In-building infrastructure',met:p.gigabitInfrastructure,note:'Ducting to each home.'},{label:'Provider diversity',met:p.gigabitConnection,note:'Multiple ISPs (verify).'}],['Design diverse fibre entry and adequate containment for multiple providers.']);}},
+  {id:'smartscore',name:'SmartScore',owner:'WiredScore',focus:'Smart-building technology',bestFor:'multi-unit',summary:'Certifies smart-building functionality and user outcomes. For residential, applies to multi-residential / BTR with building-wide systems.',applicability:p=>isMulti(p)?{applicable:true,reason:'Multi-residential / BTR with building-wide smart systems.'}:{applicable:false,reason:'Requires building-wide smart systems — not relevant to a single dwelling.'},readiness:c=>{const{project:p}=c;return rf([{label:'Energy monitoring',met:p.batteryStorage||p.pvKwp>0,note:'Smart energy systems.'},{label:'Connectivity backbone',met:p.gigabitInfrastructure,note:'Network infrastructure.'},{label:'EV / future-proofing',met:p.evChargePoint,note:'EV charging.'}],['Define smart use-cases and a shared data/network architecture early.']);}},
+  {id:'leed-residential',name:'LEED (Residential)',owner:'USGBC',focus:'Whole-building sustainability (US)',bestFor:'both',summary:'Globally recognised rating with residential pathways. UK-uncommon vs BREEAM/HQM but used where international recognition is wanted.',applicability:()=>({applicable:true,reason:'LEED has residential pathways; applicable but UK-uncommon.'}),readiness:c=>{const{project:p,epc,edge}=c;return rf([{label:'Energy & atmosphere',met:epc.score>=81,note:`EPC ~${epc.band}.`},{label:'Water efficiency',met:edge.pillars.water.saving>=20,note:`${edge.pillars.water.saving}%.`},{label:'Materials',met:p.recycledContent||p.responsiblySourcedMaterials,note:'Material credits.'},{label:'Sustainable sites',met:p.suds,note:'Site management.'}],['Pursue where international recognition is valued; otherwise BREEAM/HQM map better to UK practice.']);}},
+  {id:'building-with-nature',name:'Building with Nature',owner:'Building with Nature CIC',focus:'Green infrastructure & ecology',bestFor:'multi-unit',summary:'UK benchmark for green infrastructure across wildlife, water and wellbeing — suited to residential-led masterplans.',applicability:p=>p.units>=5?{applicable:true,reason:'Site-scale green-infrastructure benchmark — suits developments/masterplans.'}:{applicable:false,reason:'Aimed at developments with meaningful green infrastructure; limited value for 1–2 dwellings.'},readiness:c=>{const{project:p}=c;return rf([{label:'Biodiversity Net Gain',met:p.biodiversityNetGainPct>=10,note:`BNG ${p.biodiversityNetGainPct}%.`},{label:'Sustainable drainage',met:p.suds,note:'Multifunctional SuDS.'},{label:'Access to nature',met:p.biodiversityNetGainPct>=20,note:'Generous green space.'}],['Integrate green infrastructure as multifunctional from masterplanning.']);}},
+  {id:'nabers-uk',name:'NABERS UK',owner:'BRE / NABERS',focus:'Measured operational performance',bestFor:'multi-unit',summary:'Rates measured in-use energy performance. In the UK currently covers offices (Design for Performance); no residential scheme yet.',applicability:()=>({applicable:false,reason:'NABERS UK currently targets non-domestic (offices). Not applicable to residential at present.'}),readiness:()=>rf([],['Not applicable to residential — monitor for a future scheme.'])},
+];
+function assessCertifications(ctx){
+  const{project:p}=ctx,applicable=[],notApplicable=[];
+  for(const s of SCHEMES){const{applicable:ok,reason}=s.applicability(p);const base={id:s.id,name:s.name,owner:s.owner,focus:s.focus,bestFor:s.bestFor,summary:s.summary,reason,targeted:p.targetCertifications.includes(s.id)};
+    if(ok)applicable.push({...base,applicable:true,readiness:s.readiness(ctx)});else notApplicable.push({...base,applicable:false,readiness:null});}
+  applicable.sort((a,b)=>a.targeted!==b.targeted?(a.targeted?-1:1):(b.readiness?.score??0)-(a.readiness?.score??0));
+  return{applicable,notApplicable,targeted:applicable.filter(s=>s.targeted)};
+}
+// ---- scoring --------------------------------------------------------------
+function scoreProject({project:p,epc,edge,regulations,planning}){
+  const energy=clamp(epc.score,0,100),water=clamp(edge.pillars.water.saving*2.5,0,100),materials=clamp(edge.pillars.materials.saving*2.5,0,100);
+  const health=pctTrue([p.daylightFactorAvg>=1.5,p.ventilationSystem!=='natural',p.solarShading||p.crossVentilation,p.separatingSoundDnTw>=45,p.pas24SecureDoors,p.accessibleM4_2||p.wheelchairM4_3]);
+  const place=pctTrue([p.biodiversityNetGainPct>=10,p.biodiversityNetGainPct>=20,p.suds,p.gia>=planning.ndssMinimum,p.cycleStorage]);
+  const conn=pctTrue([p.gigabitConnection,p.gigabitInfrastructure,p.evChargePoint,p.pvKwp>0||p.batteryStorage]);
+  const breakdown={energy:round(energy),water:round(water),materials:round(materials),health:round(health),place:round(place),connectivity:round(conn)};
+  const overall=round(weightedAverage([{value:energy,weight:30},{value:water,weight:15},{value:materials,weight:15},{value:health,weight:15},{value:place,weight:15},{value:conn,weight:10}]));
+  let level,certifiable=true;
+  if(!regulations.compliant){level='Not certifiable';certifiable=false;}
+  else if(!edge.meetsAllPillars)level='Compliant (not yet certified)';
+  else if(overall>=90)level=edge.zeroCarbon?'Platinum — Zero Carbon':'Platinum';
+  else if(overall>=78)level=edge.zeroCarbon?'Gold — Zero Carbon':'Gold';
+  else if(overall>=65)level='Silver';
+  else level='Certified';
+  return{overall,breakdown,level,certifiable,zeroCarbon:edge.zeroCarbon};
+}
+// ---- orchestrator ---------------------------------------------------------
+function runAssessment(input){
+  const p=normaliseProject(input),model=runEnergyModel(p),epc=assessEpc(p,model),partL=assessPartL(p,model),edge=assessEdge(p,model);
+  const regulations=evaluateRegulations(p),planning=assessPlanning(p),certifications=assessCertifications({project:p,model,epc,edge,regulationsCompliant:regulations.compliant});
+  const score=scoreProject({project:p,model,epc,edge,regulations,planning});
+  const recs=[];const pushIf=(pr,a,f)=>{if(f.recommendation)recs.push({priority:pr,area:a,action:f.recommendation});};
+  for(const f of[...regulations.findings,...partL.findings,...planning.findings])if(f.status==='fail')pushIf('critical',f.title,f);
+  for(const f of[...regulations.findings,...partL.findings,...planning.findings])if(f.status==='warning')pushIf('high',f.title,f);
+  for(const[name,pl]of Object.entries(edge.pillars))if(pl.saving<20)recs.push({priority:'medium',area:`Efficiency — ${name}`,action:`Increase ${name} saving from ${pl.saving}% towards the 20% bar (baseline ${pl.baseline} ${pl.unit}, design ${pl.design} ${pl.unit}).`});
+  if(epc.score<81)recs.push({priority:'medium',area:'Energy',action:`Lift the EPC from band ${epc.band} towards B/A via better fabric, a heat pump and/or PV.`});
+  const seen=new Set(),recommendations=recs.filter(r=>seen.has(r.action)?false:(seen.add(r.action),true));
+  return{project:p,summary:{level:score.level,overall:score.overall,certifiable:score.certifiable,regulationsCompliant:regulations.compliant,epcBand:epc.band,epcScore:epc.score,edgeTier:edge.tier,zeroCarbon:score.zeroCarbon,co2PerM2:model.co2PerM2,euiKwhM2:model.eui},score,energy:{model,epc,partL,edge},regulations,planning,certifications,recommendations};
+}
+
+// ---- sample projects ------------------------------------------------------
+const SAMPLES={
+  'baseline-house':{...defaultProject(),name:'Code-minimum gas house (baseline)'},
+  'best-practice-house':{...defaultProject(),name:'Best-practice all-electric house',region:'south-west',builtForm:'detached',bedrooms:4,bedspaces:6,gia:120,uWall:.15,uRoof:.10,uFloor:.11,uWindow:1.1,airPermeability:3,thermalBridging:.04,glazingRatio:.2,heatingSystem:'ashp',ventilationSystem:'mvhr',waterUseLpd:95,pvKwp:4,batteryStorage:true,solarShading:true,daylightFactorAvg:2.2,accessibleM4_2:true,primaryStructure:'timber-frame',embodiedCarbonA1A5:480,responsiblySourcedMaterials:true,recycledContent:true,suds:true,rainwaterHarvesting:true,biodiversityNetGainPct:20,cycleStorage:true,targetCertifications:['hqm','passivhaus']},
+  'passivhaus-house':{...defaultProject(),name:'Passivhaus-aspiring house',builtForm:'detached',bedrooms:4,bedspaces:6,gia:130,uWall:.12,uRoof:.10,uFloor:.10,uWindow:.8,airPermeability:.6,thermalBridging:.02,glazingRatio:.18,heatingSystem:'ashp',ventilationSystem:'mvhr',waterUseLpd:90,pvKwp:5,batteryStorage:true,solarShading:true,daylightFactorAvg:2,primaryStructure:'timber-frame',embodiedCarbonA1A5:450,responsiblySourcedMaterials:true,recycledContent:true,suds:true,biodiversityNetGainPct:15,targetCertifications:['passivhaus']},
+  'btr-apartment-block':{...defaultProject(),name:'Build-to-rent apartment block (London)',region:'london',dwellingType:'flat',builtForm:'apartment-block',waterStressedArea:true,units:80,storeys:8,topStoreyHeightM:24,bedrooms:2,bedspaces:3,gia:61,uWall:.16,uRoof:.12,uFloor:.12,uWindow:1.2,airPermeability:3,thermalBridging:.05,glazingRatio:.3,heatingSystem:'heat-network',ventilationSystem:'mvhr',waterUseLpd:105,pvKwp:30,solarShading:true,crossVentilation:false,daylightFactorAvg:1.7,accessibleM4_2:true,wheelchairM4_3:true,separatingSoundDnTw:50,impactSoundLnTw:58,primaryStructure:'masonry',embodiedCarbonA1A5:720,responsiblySourcedMaterials:true,suds:true,biodiversityNetGainPct:12,affordableHousingPct:35,cycleStorage:true,parkingSpaces:0,evChargePoint:false,targetCertifications:['breeam','well','wiredscore-home']},
+  'noncompliant-refurb':{...defaultProject(),name:'Poor refurbishment (non-compliant example)',projectType:'major-refurbishment',builtForm:'mid-terrace',uWall:.45,uRoof:.25,uFloor:.30,uWindow:2.2,airPermeability:12,glazingRatio:.28,heatingSystem:'gas-boiler',ventilationSystem:'natural',waterUseLpd:145,pvKwp:0,evChargePoint:false,gigabitInfrastructure:false,gigabitConnection:false,pas24SecureDoors:false,daylightFactorAvg:1,embodiedCarbonA1A5:850,suds:false,biodiversityNetGainPct:0},
+};
+
+// ---- UI (form build + render) ---------------------------------------------
+const $=(s,r=document)=>r.querySelector(s);
+const titleCase=s=>String(s).replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const FIELDS=[
+  ['Context',[['name','Project name','text'],['reference','Reference','text'],['nation','Nation','select'],['region','Region','select'],['dwellingType','Dwelling type','select'],['builtForm','Built form','select'],['projectType','Project type','select'],['units','Number of dwellings','number'],['storeys','Storeys','number'],['topStoreyHeightM','Top storey height (m)','number'],['bedrooms','Bedrooms','number'],['bedspaces','Bedspaces (persons)','number'],['gia','Gross internal area (m²)','number'],['waterStressedArea','Water-stressed area','check']]],
+  ['Fabric',[['uWall','Wall U-value','number'],['uRoof','Roof U-value','number'],['uFloor','Floor U-value','number'],['uWindow','Window U-value','number'],['airPermeability','Air permeability (m³/h·m²)','number'],['thermalBridging','Thermal bridging (y)','number'],['glazingRatio','Glazing ratio (0–1)','number'],['primaryStructure','Primary structure','select']]],
+  ['Services & energy',[['heatingSystem','Heating system','select'],['ventilationSystem','Ventilation','select'],['waterUseLpd','Water use (L/p/day)','number'],['pvKwp','Solar PV (kWp)','number'],['batteryStorage','Battery storage','check'],['evChargePoint','EV charge point','check'],['gigabitInfrastructure','Gigabit infrastructure','check'],['gigabitConnection','Gigabit connection','check'],['sapEpcScore','SAP/EPC score (optional)','number']]],
+  ['Health, comfort & access',[['crossVentilation','Cross ventilation','check'],['solarShading','Solar shading','check'],['daylightFactorAvg','Avg daylight factor (%)','number'],['accessibleM4_2','M4(2) accessible','check'],['wheelchairM4_3','M4(3) wheelchair','check'],['pas24SecureDoors','PAS 24 secure doors','check'],['separatingSoundDnTw','Separating airborne sound (dB)','number'],['impactSoundLnTw','Separating impact sound (dB)','number']]],
+  ['Materials & water',[['embodiedCarbonA1A5','Embodied carbon A1–A5','number'],['responsiblySourcedMaterials','Responsibly sourced','check'],['recycledContent','Recycled content','check'],['suds','Sustainable drainage','check'],['rainwaterHarvesting','Rainwater harvesting','check'],['greywaterReuse','Greywater reuse','check']]],
+  ['Planning',[['biodiversityNetGainPct','Biodiversity Net Gain (%)','number'],['affordableHousingPct','Affordable housing (%)','number'],['cycleStorage','Cycle storage','check'],['parkingSpaces','Parking spaces','number']]],
+];
+const SCHEME_IDS=SCHEMES.map(s=>s.id);
+function field(key,label,type,value){
+  const w=document.createElement('div');
+  if(type==='check'){w.className='field check';w.innerHTML=`<input type="checkbox" id="f_${key}" data-key="${key}" ${value?'checked':''}/><label for="f_${key}">${esc(label)}</label>`;return w;}
+  w.className='field';
+  if(type==='select'){const o=(OPT[key]||[]).map(x=>`<option value="${x}" ${x===value?'selected':''}>${esc(titleCase(x))}</option>`).join('');w.innerHTML=`<label for="f_${key}">${esc(label)}</label><select id="f_${key}" data-key="${key}">${o}</select>`;}
+  else{const t=type==='number'?'number':'text',step=type==='number'?'step="any"':'',v=value==null?'':value;w.innerHTML=`<label for="f_${key}">${esc(label)}</label><input type="${t}" ${step} id="f_${key}" data-key="${key}" value="${esc(v)}"/>`;}
+  return w;
+}
+function buildForm(vals){
+  const form=$('#projectForm');form.innerHTML='';
+  for(const[group,fields]of FIELDS){const fs=document.createElement('fieldset');fs.className='fieldset';fs.innerHTML=`<legend>${group}</legend>`;const g=document.createElement('div');g.className='grid2';for(const[k,l,t]of fields)g.appendChild(field(k,l,t,vals[k]));fs.appendChild(g);form.appendChild(fs);}
+  const fs=document.createElement('fieldset');fs.className='fieldset';fs.innerHTML='<legend>Target certifications</legend>';const g=document.createElement('div');g.className='grid2';const tgt=new Set(vals.targetCertifications||[]);
+  for(const id of SCHEME_IDS){const wr=document.createElement('div');wr.className='field check';wr.innerHTML=`<input type="checkbox" id="cert_${id}" data-cert="${id}" ${tgt.has(id)?'checked':''}/><label for="cert_${id}">${esc(titleCase(id))}</label>`;g.appendChild(wr);}
+  fs.appendChild(g);form.appendChild(fs);
+}
+function readForm(){
+  const out={};
+  for(const el of document.querySelectorAll('[data-key]')){const k=el.dataset.key;if(el.type==='checkbox')out[k]=el.checked;else if(el.type==='number')out[k]=el.value===''?null:Number(el.value);else out[k]=el.value;}
+  out.targetCertifications=[...document.querySelectorAll('[data-cert]')].filter(e=>e.checked).map(e=>e.dataset.cert);
+  return out;
+}
+const bar=(l,v)=>`<div class="bar-row"><span>${esc(l)}</span><span class="bar-track"><span class="bar-fill" style="width:${clamp(v,0,100)}%"></span></span><span>${Math.round(v)}</span></div>`;
+const edgeBar=(l,p)=>`<div class="bar-row"><span>${esc(l)}</span><span class="bar-track"><span class="bar-fill" style="width:${clamp(p.saving,0,100)}%;${p.saving>=20?'':'background:linear-gradient(90deg,#e0a32e,#e0563f)'}"></span></span><span>${p.saving}%</span></div>`;
+const fItem=f=>`<li class="finding ${f.status}"><div class="ftitle"><span>${esc(f.title)}</span><span class="status-tag ${f.status}">${f.status.replace('-',' ')}</span></div><p class="fdetail">${esc(f.detail)}</p>${f.requirement?`<p class="fmeta">Requirement: ${esc(f.requirement)}</p>`:''}${f.recommendation?`<p class="frec">➤ ${esc(f.recommendation)}</p>`:''}${f.reference?`<p class="fmeta">Ref: ${esc(f.reference)}</p>`:''}</li>`;
+const fList=a=>`<ul class="findings">${a.map(fItem).join('')}</ul>`;
+const schemeCard=s=>{const r=s.readiness,fac=(r?.factors||[]).map(f=>`<div class="factor"><span class="dot ${f.met?'met':'no'}"></span><span>${esc(f.label)} — <span class="muted">${esc(f.note)}</span></span></div>`).join('');return`<div class="scheme ${s.targeted?'targeted':''}"><h5>${esc(s.name)} ${s.targeted?'<span class="badge level">targeted</span>':''}</h5><div class="owner">${esc(s.owner)} · ${esc(s.focus)} · best for ${esc(s.bestFor)}</div><p class="ssum">${esc(s.summary)}</p><p class="fmeta">${esc(s.reason)}</p>${r?`<div class="readiness"><span class="bar-track"><span class="bar-fill" style="width:${r.score}%"></span></span><strong>${r.score}%</strong></div>${fac}`:''}${r?.recommendations?.length?`<p class="frec">➤ ${esc(r.recommendations[0])}</p>`:''}</div>`;};
+function render(rep){
+  $('#emptyState').hidden=true;const el=$('#report');el.hidden=false;
+  const s=rep.summary,sc=rep.score,en=rep.energy;
+  el.innerHTML=`
+  <div class="verdict"><div class="score-ring" style="--val:${sc.overall}"><span>${sc.overall}</span></div>
+    <div class="verdict-main"><h3>${esc(rep.project.name||'Project')}</h3>
+      <span class="badge ${sc.certifiable?'level':'notok'}">${esc(sc.level)}</span>${sc.zeroCarbon?'<span class="badge zero">Zero Carbon (operational)</span>':''}
+      <div class="kpis">
+        <div class="kpi"><div class="k">EPC (indicative)</div><div class="v"><span class="epc-band epc-${s.epcBand}">${s.epcBand}</span> ${s.epcScore}</div></div>
+        <div class="kpi"><div class="k">Operational CO₂</div><div class="v">${s.co2PerM2} <small>kg/m²·yr</small></div></div>
+        <div class="kpi"><div class="k">Energy use</div><div class="v">${s.euiKwhM2} <small>kWh/m²·yr</small></div></div>
+        <div class="kpi"><div class="k">EDGE tier</div><div class="v">${esc(s.edgeTier)}</div></div>
+        <div class="kpi"><div class="k">Building Regs</div><div class="v">${s.regulationsCompliant?'✅ pass':'❌ fail'}</div></div>
+      </div></div></div>
+  <h4 class="section">Score breakdown</h4><div class="bars">${bar('Energy & carbon',sc.breakdown.energy)}${bar('Water',sc.breakdown.water)}${bar('Materials',sc.breakdown.materials)}${bar('Health & comfort',sc.breakdown.health)}${bar('Place & planning',sc.breakdown.place)}${bar('Connectivity',sc.breakdown.connectivity)}</div>
+  <h4 class="section">EDGE-style resource savings (≥20% each to certify)</h4><div class="bars">${edgeBar('Energy',en.edge.pillars.energy)}${edgeBar('Water',en.edge.pillars.water)}${edgeBar('Materials (embodied)',en.edge.pillars.materials)}</div>
+  <h4 class="section">Building Regulations & Approved Documents</h4>${fList(rep.regulations.findings)}
+  <h4 class="section">Energy — Part L & Future Homes Standard</h4>${fList(en.partL.findings)}
+  <h4 class="section">Planning policy</h4>${fList(rep.planning.findings)}
+  <h4 class="section">Applicable aspirational certifications</h4><div class="schemes">${rep.certifications.applicable.map(schemeCard).join('')}</div>
+  ${rep.certifications.notApplicable.length?`<p class="muted" style="margin-top:12px">Not applicable to this residential project:</p><div class="na-list">${rep.certifications.notApplicable.map(s=>`<span class="na-pill" title="${esc(s.reason)}">${esc(s.name)}</span>`).join('')}</div>`:''}
+  <h4 class="section">Prioritised recommendations</h4><ul class="recs">${rep.recommendations.length?rep.recommendations.map(r=>`<li class="rec"><span class="prio ${r.priority}">${r.priority}</span><span><strong>${esc(r.area)}:</strong> ${esc(r.action)}</span></li>`).join(''):'<li class="muted">No outstanding recommendations — strong scheme.</li>'}</ul>`;
+  el.scrollIntoView({behavior:'smooth',block:'start'});
+}
+// ---- boot -----------------------------------------------------------------
+const DEFAULTS=defaultProject();
+buildForm(DEFAULTS);
+const sel=$('#sample');
+sel.innerHTML='<option value="">— load an example —</option>'+Object.entries(SAMPLES).map(([k,v])=>`<option value="${k}">${esc(v.name)}</option>`).join('');
+sel.addEventListener('change',()=>{if(SAMPLES[sel.value])buildForm({...DEFAULTS,...SAMPLES[sel.value]});});
+$('#assessBtn').addEventListener('click',()=>render(runAssessment(readForm())));
+$('#disclaimer').textContent='ResiCert is an indicative pre-assessment for early design & education — not a SAP/EPC calculation, Building Control approval, or formal certification. Standalone single-file build; runs entirely in your browser. Verify against current local requirements.';
+// auto-run once so the panel isn't empty
+render(runAssessment(readForm()));
+</script>
+</body>
+</html>
