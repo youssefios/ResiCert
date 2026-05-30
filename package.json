@@ -1,0 +1,30 @@
+{
+  "name": "resicert",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "ResiCert — a UK residential sustainability & compliance certification system (an EDGE-style tool adapted for UK Building Regulations, Approved Documents, planning policy, and applicable aspirational certifications).",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test",
+    "assess:sample": "node scripts/assess-sample.js"
+  },
+  "keywords": [
+    "uk",
+    "residential",
+    "certification",
+    "building-regulations",
+    "approved-documents",
+    "part-l",
+    "epc",
+    "breeam",
+    "passivhaus",
+    "sustainability",
+    "net-zero"
+  ],
+  "license": "MIT"
+}
